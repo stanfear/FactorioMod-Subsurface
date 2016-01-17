@@ -10,6 +10,9 @@ teleportation_time = 120
 elevator_size = 5
 max_pollution_move_active = 2 -- the max amount of pollution that can be moved per ticks from one surface to the above, only for active air-vent
 max_pollution_move_passive = 1 -- the max amount of pollution that can be moved per ticks from one surface to the above, only for passive air-vent
+max_apnea_time = 20*60
+apnea_threshold = 1000
+apnea_damage = 2.5
 -- end configuration variables
 
 -- state variables
@@ -28,6 +31,7 @@ script.on_init(function ()
 	global.item_elevator = global.item_elevator or {}
 	global.surface_drillers = global.surface_drillers or {}
 	global.air_vents = global.air_vents or {}
+	global.underground_players = global.underground_players or {}
 
 	-- move to where I create the first entrance ?
 	global.onTickFunctions["teleportation_check"] = teleportation_check
@@ -42,7 +46,7 @@ end)
 script.on_load(function ()
 	
 
-	generate_tunnel_surface("Tunnel_1")
+	--generate_tunnel_surface("Tunnel_1")
 
 	global.onTickFunctions = global.onTickFunctions or {}
 	global.onTickFunctions["teleportation_check"] = teleportation_check
@@ -152,6 +156,38 @@ function pollution_moving(function_name)
 	end
 end
 
+function pollution_killing_subsurface(function_name)
+	for player_name, apnea_data in pairs(global.underground_players) do
+		local modifier
+		if is_subsurface(apnea_data.player.surface) then
+			if apnea_data.player.surface.get_pollution(apnea_data.player.position) >= apnea_threshold then
+				modifier = 1
+			else
+				modifier = 0
+			end
+		else
+			modifier = -1
+		end
+		apnea_data.gui_element.airbar.value = apnea_data.gui_element.airbar.value - (modifier/max_apnea_time)
+		apnea_data.gui_element.airbar.value = (apnea_data.gui_element.airbar.value <0) and 0 or (apnea_data.gui_element.airbar.value > 1) and 1 or apnea_data.gui_element.airbar.value
+		if apnea_data.gui_element.airbar.value >= 1 and not is_subsurface(apnea_data.player.surface) then
+			apnea_data.gui_element.destroy();
+			global.underground_players[player_name] = nil
+		elseif apnea_data.gui_element.airbar.value <= 0 and (game.tick %60) == 0 then
+			apnea_data.player.character.damage(apnea_damage, game.forces.neutral, "poison")
+			if not apnea_data.player.character then
+				apnea_data.gui_element.destroy();
+				global.underground_players[player_name] = nil
+			end
+		end
+	end
+	if associative_table_count(global.underground_players) == 0 then
+		global.onTickFunctions["pollution_killing_subsurface"] = nil
+	end
+end
+
+
+
 function move_items(function_name)
 	for _,elevator in pairs(global.item_elevator) do
 		if elevator.input.active or elevator.output.active then
@@ -237,6 +273,16 @@ function temp_teleportation_check(fct_name)
 				player.teleport(get_safe_position(data.destination_entity.position, player.position),destination_surface)
 				stop_teleportation = true
 
+				if is_subsurface(destination_surface) and not global.underground_players[player.name] then
+					-- add progress bar representing the amount of air the player has
+					player.gui.left.add{type="table", name="air_bar_container", colspan = 2}
+					local air_bar_container = player.gui.left.air_bar_container
+					air_bar_container.add{type="label", name="airbar_label", caption = "air left : "}
+					air_bar_container.add{type="progressbar", name="airbar", size = 120}
+					air_bar_container.airbar.value = 1
+					global.underground_players[player.name] = {player = player, gui_element = air_bar_container}	
+					global.onTickFunctions["pollution_killing_subsurface"] = pollution_killing_subsurface
+				end
 
 				--local chunk_position = to_chunk_position(player.position)
 				--[[ shouldn't be usefull anymore as if the surface is not generated, we should never get here
@@ -376,6 +422,10 @@ end
 
 function get_oversurface(_subsurface)
 	return game.get_surface("nauvis")
+end
+
+function is_subsurface(surface)
+	return surface == game.get_surface("Tunnel_1")
 end
 
 function place_surface_elevator(_surface, _subsurface, _position, _force)
@@ -559,7 +609,7 @@ function on_built_entity(event)
 		local Tunnel_1 = get_subsurface(entity.surface)
 		local chunk_position = to_chunk_position(entity.position)
 		local clear_tunnel_size = math.floor(elevator_size /2) + 1
-		Tunnel_1.request_to_generate_chunks(entity.position, floor(clear_tunnel_size / 32) + 3)
+		Tunnel_1.request_to_generate_chunks(entity.position, math.floor(clear_tunnel_size / 32) + 3)
 
 		local desc = entity.surface.create_entity{
                 name='custom-flying-text',

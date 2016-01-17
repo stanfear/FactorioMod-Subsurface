@@ -84,9 +84,13 @@ end
 
 
 function to_chunk_position(position)
-	return {x = floor(position.x/32),y = floor(position.y/32)}
+	return {x = math.floor(position.x/32),y = math.floor(position.y/32)}
 end
 
-function floor(n)
-	return n - (n % 1)
+function associative_table_count(table)
+	local i = 0
+	for _,_ in pairs(table) do
+		i=i+1
+	end
+	return i
 end
