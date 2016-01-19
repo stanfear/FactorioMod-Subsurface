@@ -23,8 +23,6 @@ time_spent_dict = {}
 
 
 script.on_init(function ()
-
-	generate_tunnel_surface("Tunnel_1")
 	
 	global.onTickFunctions = global.onTickFunctions or {}
 	global.elevator_association = global.elevator_association or {}
@@ -32,6 +30,7 @@ script.on_init(function ()
 	global.surface_drillers = global.surface_drillers or {}
 	global.air_vents = global.air_vents or {}
 	global.underground_players = global.underground_players or {}
+	global.surface_associations = global.surface_associations or {}
 
 	-- move to where I create the first entrance ?
 	global.onTickFunctions["teleportation_check"] = teleportation_check
@@ -44,9 +43,6 @@ end)
 
 
 script.on_load(function ()
-	
-
-	--generate_tunnel_surface("Tunnel_1")
 
 	global.onTickFunctions = global.onTickFunctions or {}
 	global.onTickFunctions["teleportation_check"] = teleportation_check
@@ -58,6 +54,10 @@ script.on_load(function ()
 	global.item_elevator = global.item_elevator or {}
 	global.surface_drillers = global.surface_drillers or {}
 	global.air_vents = global.air_vents or {}
+	global.underground_players = global.underground_players or {}
+	global.surface_associations = global.surface_associations or {}
+
+	--global.onTickFunctions["debug"] = debug
 end)
 
 -- when an entity is built (to create the tunnel exit)
@@ -88,7 +88,7 @@ script.on_event(defines.events.on_tick,
 function debug(function_name)
 	local gpp = game.player.print
 
-	local surface = game.get_surface("Tunnel_1")
+	local surface = get_subsurface(game.player.surface)
 
 	local chunk_position = to_chunk_position(game.player.position)
 	local bottom_left = surface.is_chunk_generated({x=chunk_position.x-1, y=chunk_position.y+1}) and "O" or "X"
@@ -101,7 +101,13 @@ function debug(function_name)
 	local top_center = surface.is_chunk_generated({x=chunk_position.x, y=chunk_position.y-1}) and "O" or "X"
 	local top_right = surface.is_chunk_generated({x=chunk_position.x+1, y=chunk_position.y-1}) and "O" or "X"
 
-	gpp("chunk position : " .. top_left .. "-" ..top_center .. "-" ..top_right .. " | " .. center_left .. "-" ..center_center .. "-" ..center_right .. " | " .. bottom_left .. "-" ..bottom_center .. "-" ..bottom_right)
+	local string = ""
+	for x,y in iarea(get_area(chunk_position, 2)) do
+		string = string .. string.format("{%d,%d}-%s", x,y, surface.is_chunk_generated({x=x, y=y}) and "O" or "X")
+	end
+	gpp(string)
+
+	--gpp("chunk position : " .. top_left .. "-" ..top_center .. "-" ..top_right .. " | " .. center_left .. "-" ..center_center .. "-" ..center_right .. " | " .. bottom_left .. "-" ..bottom_center .. "-" ..bottom_right)
 	
 	return true
 end
@@ -411,30 +417,53 @@ function can_place_surface_elevator(_surface, _position)
 	return true
 end
 
-function get_subsurface(surface)
-
-	if not game.get_surface("Tunnel_1") then
-		generate_tunnel_surface("Tunnel_1")
+function get_subsurface(_surface)
+	if global.surface_associations[_surface.name] then -- if the subsurface already exist
+		return game.get_surface(global.surface_associations[_surface.name])
+	else -- we need to create the subsurface (pattern : subsurface_<surface_name>_<subsurface_number> - for sub_subsurface, the number is incressed)
+		local subsurface_name = ""
+		if is_subsurface(_surface) then
+			local regex = "^subsurface_(.+)_(%d+)$"
+			local subsurface_number
+			_, _,surface_name, subsurface_number = string.find(_surface.name, regex)
+			subsurface_name = "subsurface_" .. surface_name .. "_" .. (subsurface_number+1)
+		else
+			subsurface_name = "subsurface_" .. _surface.name .. "_1"
+		end
+		game.create_surface(subsurface_name)
+		local subsurface = game.get_surface(subsurface_name)
+		global.surface_associations[_surface.name] = subsurface.name
+		return subsurface
 	end
-
-	return game.get_surface("Tunnel_1")
 end
 
 function get_oversurface(_subsurface)
-	return game.get_surface("nauvis")
+	if not is_subsurface(_subsurface) then return nil end
+	for surface_name,subsurface_name in pairs(global.surface_associations) do
+		if subsurface_name == _subsurface.name then
+			return game.get_surface(surface_name)
+		end
+	end
 end
 
-function is_subsurface(surface)
-	return surface == game.get_surface("Tunnel_1")
+function is_subsurface(_surface)
+	local i, _ = string.find(_surface.name, "subsurface")
+	if i == 1 then -- who knows it could be another surface which happens to have the same pattern
+		for surface_name,subsurface_name in pairs(global.surface_associations) do
+			if subsurface_name == _surface.name then
+				return true
+			end
+		end
+	end
+	return false
 end
 
 function place_surface_elevator(_surface, _subsurface, _position, _force)
-	if not can_place_surface_elevator(_surface, _position) then return end
+	if not can_place_surface_elevator(_subsurface, _position) then return end
 
 	local clear_tunnel_size = math.ceil(elevator_size /2) + 1
 	-- clean all other entities ?
-	clearTunnel(_subsurface, _position, clear_tunnel_size, 1.5)--elevator_size/2)
-			
+	clear_subsurface(_subsurface, _position, clear_tunnel_size, 1.5)--elevator_size/2)
 
 	local surface_player_elevator = _surface.create_entity{name = "tunnel-entrance", position = _position, force=_force}
 
@@ -558,7 +587,7 @@ function on_chunk_generated(event)
 
 	local surface = event.surface
 	local area = event.area
-	if surface.name == "Tunnel_1" then
+	if is_subsurface(surface) then
 		local newTiles = {}
 		for x, y in iarea(area) do
 			table.insert(newTiles, {name = "out-of-map", position = {x, y}})
@@ -568,8 +597,8 @@ function on_chunk_generated(event)
 end
 
 -- when a wall has been removed
-function on_tunnel_wall_mined(wall_entity, surface)
-	clearTunnel(surface, wall_entity.position, 1, 0)
+function on_subsurface_wall_mined(wall_entity, surface)
+	clear_subsurface(surface, wall_entity.position, 1, 0)
 end
 
 -- when a building has been removed (to check when a wall is removed)
@@ -578,7 +607,7 @@ function on_pre_mined_item(event)
 	local surface = entity.surface
 
 	if event.entity.name == cavern_Wall_name then
-		on_tunnel_wall_mined(entity, surface)
+		on_subsurface_wall_mined(entity, surface)
 	elseif event.entity.name == "tunnel-entrance" or event.entity.name == "tunnel-exit" then
 		remove_surface_player_elevator(event.entity, game.get_player(event.player_index))
 	elseif entity.name == "surface-driller" then
@@ -606,10 +635,10 @@ function on_built_entity(event)
 	local entity = event.created_entity
 
 	if entity.name == "surface-driller" then
-		local Tunnel_1 = get_subsurface(entity.surface)
+		local subsurface = get_subsurface(entity.surface)
 		local chunk_position = to_chunk_position(entity.position)
 		local clear_tunnel_size = math.floor(elevator_size /2) + 1
-		Tunnel_1.request_to_generate_chunks(entity.position, math.floor(clear_tunnel_size / 32) + 3)
+		subsurface.request_to_generate_chunks(entity.position, math.floor(clear_tunnel_size / 32) + 3)
 
 		local desc = entity.surface.create_entity{
                 name='custom-flying-text',
@@ -642,12 +671,7 @@ function on_built_entity(event)
 	end
 end
 
-function generate_tunnel_surface(name)
-	game.create_surface(name)
-end
-
-
-function clearTunnel(_surface, _position, _digging_radius, _clearing_radius)
+function clear_subsurface(_surface, _position, _digging_radius, _clearing_radius)
 	if _digging_radius < 1 then return nil end -- min _digging_radius is 1 
 
 	local digging_subsurface_area = get_area(_position, _digging_radius - 1)
