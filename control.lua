@@ -31,6 +31,7 @@ script.on_init(function ()
 	global.air_vents = global.air_vents or {}
 	global.underground_players = global.underground_players or {}
 	global.surface_associations = global.surface_associations or {}
+	global.Underground_driving_players = global.Underground_driving_players or {}
 
 	-- move to where I create the first entrance ?
 	global.onTickFunctions["teleportation_check"] = teleportation_check
@@ -56,6 +57,7 @@ script.on_load(function ()
 	global.air_vents = global.air_vents or {}
 	global.underground_players = global.underground_players or {}
 	global.surface_associations = global.surface_associations or {}
+	global.Underground_driving_players = global.Underground_driving_players or {}
 
 	--global.onTickFunctions["debug"] = debug
 end)
@@ -69,6 +71,11 @@ script.on_event(defines.events.on_chunk_generated, function (event) on_chunk_gen
 
 -- when a item is removed (to know when a wall is removed) /!\ will need to be removed when tiles are set to unminable
 script.on_event(defines.events.on_preplayer_mined_item,  function (event) on_pre_mined_item(event) end)
+script.on_event(defines.events.on_entity_died,  function (event) on_pre_mined_item(event) end)
+script.on_event(defines.events.on_robot_pre_mined,  function (event) on_pre_mined_item(event) end)
+
+-- when a item is removed (to know when a wall is removed) /!\ will need to be removed when tiles are set to unminable
+script.on_event(defines.events.on_player_driving_changed_state,  function (event) on_player_driving_changed_state(event) end)
 
 -- debug only -> to add stuff to the player on game start
 script.on_event(defines.events.on_player_created,  function (event) startingItems(game.get_player(event.player_index)) end)
@@ -110,6 +117,62 @@ function debug(function_name)
 	--gpp("chunk position : " .. top_left .. "-" ..top_center .. "-" ..top_right .. " | " .. center_left .. "-" ..center_center .. "-" ..center_right .. " | " .. bottom_left .. "-" ..bottom_center .. "-" ..bottom_right)
 	
 	return true
+end
+
+function on_player_driving_changed_state(event)
+	local player = game.players[event.player_index]
+	if is_subsurface(player.surface) then
+		if player.driving then 
+			global.Underground_driving_players[event.player_index] = player
+
+			global.onTickFunctions["boring"] = boring
+		else
+			global.Underground_driving_players[event.player_index] = nil
+
+			if associative_table_count(global.Underground_driving_players) == 0 then
+				global.onTickFunctions["boring"] = nil
+			end
+		end
+	end
+end
+
+function boring(function_name)
+	for _,player in pairs(global.Underground_driving_players) do
+		for _,entity in ipairs(player.surface.find_entities(get_area(player.position, 10))) do
+			if entity.type == "decorative" then 
+				entity.destroy()
+			end
+		end
+		if player.driving and player.vehicle.name == "mobile-borer" then
+			local surface = player.surface
+			local vehicule_orientation = player.vehicle.orientation
+
+			local driller_colision_box = player.vehicle.prototype.collision_box
+			local center_big_excavation = move_towards_continuous(player.vehicle.position, vehicule_orientation, -driller_colision_box.left_top.y)
+			local center_small_excavation = move_towards_continuous(center_big_excavation, vehicule_orientation, 1.7)
+			local speed_test_position = move_towards_continuous(center_small_excavation, vehicule_orientation, 1.5)
+
+			local walls_dug = clear_subsurface(surface, center_small_excavation, 1, nil)
+			walls_dug = walls_dug + clear_subsurface(surface, center_big_excavation, 2, nil)
+
+			if walls_dug > 0 then 
+				local stack = {name = "stone", count = 2 * walls_dug}
+				local actually_inserted = player.vehicle.insert(stack) 
+				if actually_inserted ~= stack.count then 
+					stack.count = stack.count - actually_inserted
+					surface.spill_item_stack(player.vehicle.position, stack)
+				end
+			end
+
+			local speed_test_tile = surface.get_tile(speed_test_position.x, speed_test_position.y)
+			if player.vehicle.friction_modifier ~= 4 and player.vehicle.speed >0 and (speed_test_tile.name == "out-of-map" or speed_test_tile.name == "cave-walls") then
+				player.vehicle.friction_modifier = 4
+			end
+			if player.vehicle.friction_modifier ~= 1 and not(player.vehicle.speed >0 and (speed_test_tile.name == "out-of-map" or speed_test_tile.name == "cave-walls")) then
+				player.vehicle.friction_modifier = 1
+			end
+		end
+	end
 end
 
 function pollution_moving(function_name)
@@ -598,7 +661,7 @@ end
 
 -- when a wall has been removed
 function on_subsurface_wall_mined(wall_entity, surface)
-	clear_subsurface(surface, wall_entity.position, 1, 0)
+	clear_subsurface(surface, wall_entity.position, 1, nil)
 end
 
 -- when a building has been removed (to check when a wall is removed)
@@ -609,7 +672,11 @@ function on_pre_mined_item(event)
 	if event.entity.name == cavern_Wall_name then
 		on_subsurface_wall_mined(entity, surface)
 	elseif event.entity.name == "tunnel-entrance" or event.entity.name == "tunnel-exit" then
-		remove_surface_player_elevator(event.entity, game.get_player(event.player_index))
+		local player = nil
+		if event.player_index then
+			player = game.get_player(event.player_index)
+		end
+		remove_surface_player_elevator(event.entity, player)
 	elseif entity.name == "surface-driller" then
 		local drilling_data = global.surface_drillers[string.format("%s@{%d,%d}", entity.surface.name, entity.position.x, entity.position.y)]
 
@@ -675,21 +742,30 @@ function clear_subsurface(_surface, _position, _digging_radius, _clearing_radius
 	if _digging_radius < 1 then return nil end -- min _digging_radius is 1 
 
 	local digging_subsurface_area = get_area(_position, _digging_radius - 1)
-	local clearing_subsurface_area = get_area(_position, _clearing_radius)
 	local new_tiles = {}
 
-	for _,entity in ipairs(_surface.find_entities(clearing_subsurface_area)) do
-		if entity.type ~="player" then
-			entity.destroy()
-		else
-			entity.teleport(get_safe_position(_position, {x=_position.x + _clearing_radius, y = _position.y}))
-		end
-	end 
+	if _clearing_radius then
+		local clearing_subsurface_area = get_area(_position, _clearing_radius)
+		for _,entity in ipairs(_surface.find_entities(clearing_subsurface_area)) do
+			if entity.type ~="player" then
+				entity.destroy()
+			else
+				entity.teleport(get_safe_position(_position, {x=_position.x + _clearing_radius, y = _position.y}))
+			end
+		end 
+	end
+	local walls_destroyed = 0
 	for x, y in iarea(digging_subsurface_area) do
-		table.insert(new_tiles, {name = cavern_Ground_name, position = {x, y}})
-
+		if _surface.get_tile(x, y).name ~= cavern_Ground_name then
+			table.insert(new_tiles, {name = cavern_Ground_name, position = {x, y}})
+		end
+		
 		local wall = _surface.find_entity(cavern_Wall_name, {x = x, y = y})
-		if wall then wall.destroy() end
+		if wall then 
+			wall.destroy()
+			walls_destroyed = walls_destroyed + 1
+		else
+		end
 	end
 	for x, y in iouter_area_border(digging_subsurface_area) do
 		if _surface.get_tile(x, y).name == "out-of-map" then
@@ -698,6 +774,7 @@ function clear_subsurface(_surface, _position, _digging_radius, _clearing_radius
 		end
 	end
 	_surface.set_tiles(new_tiles)
+	return walls_destroyed
 end
 
 
@@ -726,6 +803,8 @@ function startingItems(player)
   player.insert{name="car", count=1}
   player.insert{name="chemical-plant", count=8}
   player.insert{name="assembling-machine-3", count=8}
+
+  player.insert{name="mobile-borer", count=1}
 end
 
 

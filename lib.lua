@@ -57,8 +57,8 @@ function iouter_area_border(area)
 end
 
 function get_area(position, size)
-	return {left_top = {x = position.x - size, y = position.y - size}, right_bottom = {x = position.x + size, y = position.y + size}}
-end
+	return {left_top = {x = math.floor(position.x - size) +0.5, y = math.floor(position.y - size)+0.5}, right_bottom = {x = math.floor(position.x + size) +0.5, y = math.floor(position.y + size)+0.5}}
+end	
 
 
 function KeyExists(tbl, key)
@@ -77,12 +77,6 @@ function get_safe_position(entity_position, player_position)
 	return {x = entity_position.x + (player_position.x - entity_position.x) * distance_modifier, y= entity_position.y + (player_position.y - entity_position.y) * distance_modifier}
 end
 
-
-function get_area(position, size)
-	return {left_top = {x = position.x - size, y = position.y - size}, right_bottom = {x = position.x + size, y = position.y + size}}
-end
-
-
 function to_chunk_position(position)
 	return {x = math.floor(position.x/32),y = math.floor(position.y/32)}
 end
@@ -93,4 +87,96 @@ function associative_table_count(table)
 		i=i+1
 	end
 	return i
+end
+
+function move_towards_continuous(start, factorio_orientation, distance)
+	local mod = {}
+	local rad_factorio_orientation = factorio_orientation * 2 * math.pi
+	mod.x = math.sin(rad_factorio_orientation)
+	mod.y = -math.cos(rad_factorio_orientation)
+	local newPosition = {x = start.x+mod.x*distance, y = start.y+mod.y*distance}
+	return newPosition
+end
+
+function turn_left_continuous(orientation)
+	return math.fmod(orientation + 0.25, 1)
+end
+
+function turn_right_continuous(orientation)
+	return math.fmod(orientation - 0.25, 1)
+end
+
+
+
+function notNil(class, var)
+	value = false
+	pcall(function()
+		if class[var]
+		then
+			value = true
+		end
+	end)
+	return value
+end
+
+function toGameString(arg, aT, fT)
+	if aT~=nil then asTable = aT else asTable = false end
+	if fT~=nil then firstTable = fT else firstTable = true end
+	argType = type(arg)
+	if argType == "nil"
+	then
+		text = "error"
+	elseif argType == "string" or argType == "boolean" or argType == "number"
+	then
+		text = tostring(arg) .. " "
+	elseif argType == "function"
+	then
+		text = debug.getinfo(arg).name .. " "
+	elseif notNil(arg, "x") and notNil(arg, "y") and not asTable
+	then
+		text = "Position: " .. arg.x .. ", " .. arg.y .. " "
+	elseif notNil(arg, "destructible") and not asTable
+	then
+		text = "Entity: " .. arg.name .. " " .. "Type: " .. arg.type .. " " .. toGameString(arg.position)
+	elseif notNil(arg, "collideswith") and not asTable
+	then
+		text = "Tile: " .. arg.name .. " "
+	elseif notNil(arg, "valid") and not asTable
+	then
+		text = "Unknown "
+		if arg.valid then text = text .. "Valid Object: " else text = text .. "Invalid Object: " end
+		if notNil(arg, "name") then text = text .. arg.name .. " " end
+		if notNil(arg, "type") then text = text .. "Type: " .. arg.type .. " " end
+		if notNil(arg, "position") then text = text .. toGameString(arg.position) .. " " end
+	elseif (notNil(arg, "name") or notNil(arg, "type") or notNil(arg, "position")) and not asTable
+	then
+		text = "Unknown: "
+		if notNil(arg, "name") then text = text .. "Name: " .. arg.name .. " " end
+		if notNil(arg, "type") then text = text .. "Type: " .. arg.type .. " " end
+		if notNil(arg, "position") then text = text .. toGameString(arg.position) end
+	elseif argType == "table"
+	then
+		text = ""
+		if firstTable then text = "Table: " end
+		text = text .. "{"
+		iters = math.min(#arg, 3)
+		for i=1, iters
+		do
+			text = text .. toGameString(arg[i])
+			if i<iters then text = text .. ", " end
+		end
+		if #arg>4 then text = text .. ", ... " end
+		if #arg>3 then text = text .. toGameString(arg[#arg], false, false) end
+		text = text .. "}"
+	end
+	return text
+end
+
+function message(arg, dialog, asTable)
+	if dialog
+	then
+		game.showmessagedialog{text = {toGameString(arg, asTable)}}
+	else
+		game.player.print(toGameString(arg, asTable))
+	end
 end
