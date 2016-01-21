@@ -30,4 +30,15 @@ data:extend(
     place_result = "active-air-vent",
     stack_size = 50
   },
+  {
+    type = "item",
+    name = "mobile-borer",
+    icon = "__base__/graphics/icons/car.png",
+    flags = {"goes-to-quickbar"},
+    subgroup = "transport",
+    order = "b[personal-transport]-a[car]",
+    place_result = "mobile-borer",
+    stack_size = 1
+  },
+
 })
