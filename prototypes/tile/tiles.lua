@@ -59,7 +59,7 @@ data:extend(
         volume = 0.8
       }
     },
-    map_color={r=0.312, g=0.25, b=0.187},
+    map_color={r=0.5, g=0.332, b=0.144},
     ageing=0
   },
   {
@@ -103,7 +103,7 @@ data:extend(
         count = 4
       }
     },
-    map_color={r=0, g=0, b=0},
+    map_color={r=0.367, g=0.234, b=0.082},
     ageing=0.0006
   },
 })

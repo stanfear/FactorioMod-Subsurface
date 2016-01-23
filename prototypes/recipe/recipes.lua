@@ -44,5 +44,15 @@ data:extend(
       {type="item", name="stone", amount=50}
     }
   },
+{
+    type = "recipe",
+    name = "mobile-borer",
+    enabled = true,
+    ingredients =
+    {
+      {"iron-plate", 2},
+    },
+    result = "mobile-borer"
+  }, 
  })
  

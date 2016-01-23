@@ -1,8 +1,8 @@
 {
   "name": "Subsurface",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "title": "Subsurface - build beneath your base !",
   "author": "StanFear",
-  "dependencies": ["base >= 0.12.20"],
+  "dependencies": ["base >= 0.12.21"],
   "description": "Adds the ability to dig the underground !!"
 }

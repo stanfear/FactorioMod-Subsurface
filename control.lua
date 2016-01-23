@@ -5,7 +5,7 @@ require "lib"
 
 -- configuration variables
 cavern_Wall_name = "subsurface-walls"
-cavern_Ground_name = "concrete"
+cavern_Ground_name = "caveground"
 teleportation_time = 120
 elevator_size = 5
 max_pollution_move_active = 2 -- the max amount of pollution that can be moved per ticks from one surface to the above, only for active air-vent
@@ -78,7 +78,7 @@ script.on_event(defines.events.on_robot_pre_mined,  function (event) on_pre_mine
 script.on_event(defines.events.on_player_driving_changed_state,  function (event) on_player_driving_changed_state(event) end)
 
 -- debug only -> to add stuff to the player on game start
-script.on_event(defines.events.on_player_created,  function (event) startingItems(game.get_player(event.player_index)) end)
+--script.on_event(defines.events.on_player_created,  function (event) startingItems(game.get_player(event.player_index)) end)
 
 
 script.on_event(defines.events.on_tick, 
