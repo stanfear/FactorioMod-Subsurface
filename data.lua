@@ -1,3 +1,5 @@
+require("_tools.prototypes.debug")
+
 -- entity
 require("prototypes.entity.entities")
 
