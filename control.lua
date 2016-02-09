@@ -1,26 +1,7 @@
 require "util"
 require "defines"
 require "lib"
-
-
--- configuration variables
-cavern_Wall_name = "subsurface-walls"
-cavern_Ground_name = "caveground"
-teleportation_time = 120
-elevator_size = 5
-max_pollution_move_active = 2 -- the max amount of pollution that can be moved per ticks from one surface to the above, only for active air-vent
-max_pollution_move_passive = 1 -- the max amount of pollution that can be moved per ticks from one surface to the above, only for passive air-vent
-max_apnea_time = 20*60
-apnea_threshold = 1000
-apnea_damage = 2.5
--- end configuration variables
-
--- state variables
-time_spent_dict = {}
--- end state variables
-
-
-
+require "config"
 
 script.on_init(function ()
 	
@@ -32,6 +13,7 @@ script.on_init(function ()
 	global.underground_players = global.underground_players or {}
 	global.surface_associations = global.surface_associations or {}
 	global.Underground_driving_players = global.Underground_driving_players or {}
+	global.time_spent_dict = global.time_spent_dict or {}
 
 	-- move to where I create the first entrance ?
 	global.onTickFunctions["teleportation_check"] = teleportation_check
@@ -281,7 +263,7 @@ function teleportation_check(function_name)
 	--proximity test done only every 10 ticks (the player has to wait 120 ticks to transport, 10 more should'nt kill him)
 	if game.tick % 10 == 0 then
 		for _, player in ipairs(game.players) do
-			if not KeyExists(time_spent_dict, player.name) then -- only initiate his transportation if he's not already transporting
+			if not KeyExists(global.time_spent_dict, player.name) then -- only initiate his transportation if he's not already transporting
 				if not player.walking_state.walking then -- only transport a non walking player
 					local position = player.position
 					local search_area = {left_top = {x = position.x - 0.5, y = position.y - 0.5}, right_bottom = {x = position.x + 0.5, y = position.y + 0.5}}
@@ -297,7 +279,7 @@ function teleportation_check(function_name)
 							progressbar_container.add{type="progressbar", name="progressbar", size = 120}
 
 							-- add the player and some information to the list of transporting people
-							time_spent_dict[player.name] = {player = player, destination_entity = connected_entity, time_spent = 0, gui_element = progressbar_container}
+							global.time_spent_dict[player.name] = {player = player, destination_entity = connected_entity, time_spent = 0, gui_element = progressbar_container}
 							global.onTickFunctions["temp_teleportation_check"] = temp_teleportation_check
 						end
 					end
@@ -322,7 +304,7 @@ end
 
 function temp_teleportation_check(fct_name)
 
-	for player_name, data in pairs(time_spent_dict) do
+	for player_name, data in pairs(global.time_spent_dict) do
 		local stop_teleportation
 
 		data.time_spent = data.time_spent + 1
@@ -363,10 +345,10 @@ function temp_teleportation_check(fct_name)
 			end
 		end
 		if stop_teleportation then
-			time_spent_dict[player_name] = nil
+			global.time_spent_dict[player_name] = nil
 			gui_element.destroy()
 
-			if #time_spent_dict == 0 then
+			if #global.time_spent_dict == 0 then
 				global.onTickFunctions[fct_name] = nil
 			end
 		end
@@ -616,7 +598,7 @@ function remove_surface_player_elevator(_entity, _player) -- _player is the play
 	end
 
 	-- stop all current tp concerning the entity
-	for player_name, data in pairs(time_spent_dict) do
+	for player_name, data in pairs(global.time_spent_dict) do
 		if data.destination_entity == connected_entity or data.destination_entity == _entity then
 			data.destination_entity = nil
 		end
@@ -806,5 +788,3 @@ function startingItems(player)
 
   player.insert{name="mobile-borer", count=1}
 end
-
-
