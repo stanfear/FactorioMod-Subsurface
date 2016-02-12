@@ -60,6 +60,12 @@ function get_area(position, size)
 	return {left_top = {x = math.floor(position.x - size) +0.5, y = math.floor(position.y - size)+0.5}, right_bottom = {x = math.floor(position.x + size) +0.5, y = math.floor(position.y + size)+0.5}}
 end	
 
+function expand_area(_area, _expanding_radius)
+	local left_top = {x = _area.left_top.x - _expanding_radius, y = _area.left_top.y - _expanding_radius}
+	local right_bottom = {x = _area.right_bottom.x + _expanding_radius, y = _area.right_bottom.y + _expanding_radius}
+	return {left_top = left_top, right_bottom = right_bottom}
+end
+
 
 function KeyExists(tbl, key)
   for k,v in pairs(tbl) do

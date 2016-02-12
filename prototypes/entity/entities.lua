@@ -520,6 +520,143 @@ data:extend(
     weight = 35000,
     tank_driving = true,
     inventory_size = 30
-  }
+  },
+
+  {
+    type = "decorative",
+    name = "boring-in-progress",
+    flags = {"placeable-neutral", "not-on-map", "placeable-off-grid"},
+    icon = "__base__/graphics/icons/green-asterisk.png",
+    subgroup = "grass",
+    order = "b[decorative]-b[asterisk]-b[green]",
+    collision_box = {{-0.7, -0.7}, {0.7, 0.7}},
+    selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
+    selectable_in_game = false,
+    render_layer = "air-object",
+    pictures =
+    {
+      {
+        filename = "__Subsurface__/graphics/entities/digging-in-progress.png",
+        width = 64,
+        height = 55,
+      }
+    }
+  },
+
+  {
+    type = "storage-tank",
+    name = "fluid-elevator-mk1",
+    icon = "__base__/graphics/icons/storage-tank.png",
+    flags = {"placeable-player", "player-creation"},
+    minable = {hardness = 0.2, mining_time = 3, result = "fluid-elevator-mk1"},
+    max_health = 300,
+    corpse = "small-remnants",
+    collision_box = {{-1.2, -1.2}, {1.2, 1.2}},
+    selection_box = {{-1.5, -1.5}, {1.5, 1.5}},
+    fluid_box =
+    {
+      base_area = 10,
+      base_level = -1,
+      pipe_connections = {{ position = {  0,  2} },{ position = {  0, -2} },{ position = {  2,  0} },{ position = { -2,  0} },},
+    },
+    window_bounding_box = {{-0.125, 0.6875}, {0.1875, 1.1875}},
+    pictures =
+    {
+      picture =
+      {
+        sheet =
+        {
+          filename = "__Subsurface__/graphics/entities/storage-tank.png",
+          priority = "extra-high",
+          frames = 4,
+          width = 140,
+          height = 115,
+          shift = {0.6875, 0.109375}
+        }
+      },
+      fluid_background =
+      {
+        filename = "__base__/graphics/entity/storage-tank/fluid-background.png",
+        priority = "extra-high",
+        width = 32,
+        height = 15
+      },
+      window_background =
+      {
+        filename = "__base__/graphics/entity/storage-tank/window-background.png",
+        priority = "extra-high",
+        width = 17,
+        height = 24
+      },
+      flow_sprite =
+      {
+        filename = "__base__/graphics/entity/pipe/fluid-flow-low-temperature.png",
+        priority = "extra-high",
+        width = 160,
+        height = 20
+      }
+    },
+    flow_length_in_ticks = 360,
+    circuit_wire_connection_points =
+    {
+      {
+        shadow =
+        {
+          red = {2.0, 1.0},
+          green = {2.0, 1.0},
+        },
+        wire =
+        {
+          red = {1.0, -0.0},
+          green = {1.0, -0.0},
+        }
+      },
+      {
+        shadow =
+        {
+          red = {0.0, 1.0},
+          green = {0.0, 1.0},
+        },
+        wire =
+        {
+          red = {-1, -0.25},
+          green = {-1, -0.25},
+        }
+      },
+      {
+        shadow =
+        {
+          red = {2.0, 1.0},
+          green = {2.0, 1.0},
+        },
+        wire =
+        {
+          red = {1.0, -0.0},
+          green = {1.0, -0.0},
+        }
+      },
+      {
+        shadow =
+        {
+          red = {0.0, 1.0},
+          green = {0.0, 1.0},
+        },
+        wire =
+        {
+          red = {-1, -0.25},
+          green = {-1, -0.25},
+        }
+      }
+    },
+    circuit_wire_max_distance = 7.5,        
+    working_sound =
+    {
+      sound = {
+        filename = "__base__/sound/storage-tank.ogg",
+        volume = 0.8
+      },
+      apparent_volume = 1.5,      
+    },
+  },
 }
 )

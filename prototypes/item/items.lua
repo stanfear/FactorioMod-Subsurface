@@ -41,4 +41,15 @@ data:extend(
     stack_size = 1
   },
 
+  {
+    type = "item",
+    name = "fluid-elevator-mk1",
+    icon = "__base__/graphics/icons/car.png",
+    flags = {"goes-to-quickbar"},
+    subgroup = "transport",
+    order = "b[personal-transport]-a[car]",
+    place_result = "fluid-elevator-mk1",
+    stack_size = 10
+  },
+
 })

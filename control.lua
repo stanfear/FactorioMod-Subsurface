@@ -32,11 +32,12 @@ script.on_init(function ()
 	global.underground_players = global.underground_players or {}
 	global.surface_associations = global.surface_associations or {}
 	global.Underground_driving_players = global.Underground_driving_players or {}
+	global.fluids_elevator = global.fluids_elevator or {}
+	global.waiting_entities = global.waiting_entities or {}
 
 	-- move to where I create the first entrance ?
 	global.onTickFunctions["teleportation_check"] = teleportation_check
 	global.onTickFunctions["move_items"] = move_items
-	global.onTickFunctions["pollution_moving"] = pollution_moving
 
 	--global.onTickFunctions["debug"] = debug
 end)
@@ -48,7 +49,6 @@ script.on_load(function ()
 	global.onTickFunctions = global.onTickFunctions or {}
 	global.onTickFunctions["teleportation_check"] = teleportation_check
 	global.onTickFunctions["move_items"] = move_items
-	global.onTickFunctions["pollution_moving"] = pollution_moving
 
 
 	global.elevator_association = global.elevator_association or {}
@@ -58,6 +58,8 @@ script.on_load(function ()
 	global.underground_players = global.underground_players or {}
 	global.surface_associations = global.surface_associations or {}
 	global.Underground_driving_players = global.Underground_driving_players or {}
+	global.fluids_elevator = global.fluids_elevator or {}
+	global.waiting_entities = global.waiting_entities or {}
 
 	--global.onTickFunctions["debug"] = debug
 end)
@@ -77,7 +79,7 @@ script.on_event(defines.events.on_robot_pre_mined,  function (event) on_pre_mine
 -- when a item is removed (to know when a wall is removed) /!\ will need to be removed when tiles are set to unminable
 script.on_event(defines.events.on_player_driving_changed_state,  function (event) on_player_driving_changed_state(event) end)
 
--- debug only -> to add stuff to the player on game start
+--debug only -> to add stuff to the player on game start
 --script.on_event(defines.events.on_player_created,  function (event) startingItems(game.get_player(event.player_index)) end)
 
 
@@ -119,6 +121,132 @@ function debug(function_name)
 	return true
 end
 
+
+function check_waiting_entities(function_name)
+	for id, entitypair in ipairs(global.waiting_entities) do
+		local entity = entitypair.entity
+		local icon = entitypair.icon
+		local entity_collision_box = entity.prototype.collision_box
+		local entity_area = {}
+		entity_area.left_top = {x = entity.position.x + entity_collision_box.left_top.x, y = entity.position.y + entity_collision_box.left_top.y}
+		entity_area.right_bottom = {x = entity.position.x + entity_collision_box.right_bottom.x, y = entity.position.y + entity_collision_box.right_bottom.y}
+		if game.tick % 60 == 0 then
+			if icon.valid then
+				icon.destroy()
+			else
+				icon = entity.surface.create_entity{name = "boring-in-progress", position = {x = entity.position.x, y = entity.position.y -0.25}, force=entity.force}
+				entitypair.icon = icon
+			end
+		end
+		if is_area_gen(entity_area, get_subsurface(entity.surface)) then
+			local complementary_entity = place_complementary_entity(entity)
+			if icon.valid then
+				icon.destroy()
+			end
+			global.waiting_entities[id] = nil
+
+			if entity.name == "fluid-elevator-mk1" then 
+				local data = {}
+				if entity.direction < 4 then
+					data.top_entity = entity
+					data.bottom_entity = complementary_entity
+				else
+					data.bottom_entity = entity
+					data.top_entity = complementary_entity
+				end
+				table.insert(global.fluids_elevator, data)
+			end
+
+			if not global.onTickFunctions["fluids_elevator_management"] then
+				global.onTickFunctions["fluids_elevator_management"] = fluids_elevator_management
+			end
+		end
+	end
+	if associative_table_count(global.waiting_entities) == 0 then
+		global.onTickFunctions[function_name] = nil
+	end
+end
+
+function is_area_gen(_area, _surface)
+	if is_subsurface(_surface) then
+		_area = expand_area(_area, 1)
+	end
+	chunk_area = {left_top = to_chunk_position(_area.left_top), right_bottom = to_chunk_position(_area.right_bottom)}
+	for x,y in iarea(chunk_area) do
+		if not _surface.is_chunk_generated({x=x, y=y}) then
+			return false
+		end
+	end
+	return true
+end
+
+function place_complementary_entity(_entity)
+	local complementary_entity
+	if _entity.name == "fluid-elevator-mk1" then 
+		local complementary_surface
+		if _entity.direction < 4 then
+			complementary_surface = get_subsurface(_entity.surface)
+		else
+			complementary_surface = get_oversurface(_entity.surface)
+		end
+
+		clear_subsurface(complementary_surface, _entity.position, 2, 1)
+
+		complementary_entity = complementary_surface.create_entity{name = "fluid-elevator-mk1", position = _entity.position, force=_entity.force}
+		complementary_entity.direction = (_entity.direction + 4) % 8
+	else
+		message("error, entity not known")
+		return nil
+	end
+	return complementary_entity
+end
+
+function fluids_elevator_management(function_name)
+	for id, fluid_elevator_data in ipairs(global.fluids_elevator) do
+		local top_entity = fluid_elevator_data.top_entity
+		local bottom_entity = fluid_elevator_data.bottom_entity
+
+		if not (top_entity.valid and bottom_entity.valid) then
+			if top_entity.valid then top_entity.destroy() end
+			if bottom_entity.valid then bottom_entity.destroy() end
+			global.fluids_elevator[id] = nil
+		else
+			if #top_entity.fluidbox == #bottom_entity.fluidbox then
+				for i=1,#top_entity.fluidbox do
+					local fluid = {}
+					local valid = false
+					if top_entity.fluidbox[i] and not bottom_entity.fluidbox[i] then
+						fluid = top_entity.fluidbox[i]
+						fluid.amount = fluid.amount/2
+						valid = true
+					elseif bottom_entity.fluidbox[i] and not top_entity.fluidbox[i] then
+						fluid = bottom_entity.fluidbox[i]
+						fluid.amount = fluid.amount/2
+						valid = true
+					elseif top_entity.fluidbox[i] and bottom_entity.fluidbox[i] then
+						if top_entity.fluidbox[i].type == bottom_entity.fluidbox[i].type then
+							fluid = bottom_entity.fluidbox[i]
+							fluid.amount = (top_entity.fluidbox[i].amount + bottom_entity.fluidbox[i].amount)/2
+							valid = true
+						else -- if top_entity.fluidbox[i].type ~= bottom_entity.fluidbox[i].type then
+							if (not top_entity.fluidbox[i].amount < 0.5) == (bottom_entity.fluidbox[i].amount < 0.5) then --XOR
+								fluid = (top_entity.fluidbox[i].amount > bottom_entity.fluidbox[i].amount) and top_entity.fluidbox[i] or bottom_entity.fluidbox[i]
+								fluid.amount = fluid.amount/2
+								valid = true
+							end
+						end
+					end
+					if valid then
+						top_entity.fluidbox[i] = fluid
+						bottom_entity.fluidbox[i] = fluid
+					end
+				end
+			end
+		end
+	end
+end
+
+
 function on_player_driving_changed_state(event)
 	local player = game.players[event.player_index]
 	if is_subsurface(player.surface) then
@@ -147,8 +275,8 @@ function boring(function_name)
 			local surface = player.surface
 			local vehicule_orientation = player.vehicle.orientation
 
-			local driller_colision_box = player.vehicle.prototype.collision_box
-			local center_big_excavation = move_towards_continuous(player.vehicle.position, vehicule_orientation, -driller_colision_box.left_top.y)
+			local driller_collision_box = player.vehicle.prototype.collision_box
+			local center_big_excavation = move_towards_continuous(player.vehicle.position, vehicule_orientation, -driller_collision_box.left_top.y)
 			local center_small_excavation = move_towards_continuous(center_big_excavation, vehicule_orientation, 1.7)
 			local speed_test_position = move_towards_continuous(center_small_excavation, vehicule_orientation, 1.5)
 
@@ -700,7 +828,6 @@ end
 -- when a building is built
 function on_built_entity(event)
 	local entity = event.created_entity
-
 	if entity.name == "surface-driller" then
 		local subsurface = get_subsurface(entity.surface)
 		local chunk_position = to_chunk_position(entity.position)
@@ -735,12 +862,47 @@ function on_built_entity(event)
 
 		global.air_vents[string.format("%s@{%d,%d}", entity.surface.name, entity.position.x, entity.position.y)] = {entity = entity, active = false}
 		entity.operable = false
+		global.onTickFunctions["pollution_moving"] = pollution_moving
+
+	elseif entity.name == "fluid-elevator-mk1" then
+		message(entity.direction)
+		local complementary_surface
+		if entity.direction >= 4 and not is_subsurface(entity.surface) then
+			message("the lower part of a fluid-elevator can only be placed in a subsurface !")
+			entity.direction = (entity.direction + 4) % 8
+			complementary_surface = get_subsurface(entity.surface)
+		elseif entity.direction >= 4 and is_subsurface(entity.surface) then
+			complementary_surface = get_oversurface(entity.surface)
+		else
+			complementary_surface = get_subsurface(entity.surface)
+		end
+		local icon = entity.surface.create_entity{name = "boring-in-progress", position = {x = entity.position.x, y = entity.position.y -0.25}, force=entity.force}
+		table.insert(global.waiting_entities, {entity = entity, icon = icon})
+
+		local entity_collision_box = entity.prototype.collision_box
+		local entity_area = {}
+		entity_area.left_top = {x = entity.position.x + entity_collision_box.left_top.x, y = entity.position.y + entity_collision_box.left_top.y}
+		entity_area.right_bottom = {x = entity.position.x + entity_collision_box.right_bottom.x, y = entity.position.y + entity_collision_box.right_bottom.y}
+		
+		request_area_gen(entity_area, complementary_surface)
+		global.onTickFunctions["check_waiting_entities"] = check_waiting_entities
+
+
+	end
+end
+
+function request_area_gen(_area, _surface) -- request is only done once per chunck since the game generate the map by chunks
+	if is_subsurface(_surface) then
+		_area = expand_area(_area, 1)
+	end
+	chunk_area = {left_top = to_chunk_position(_area.left_top), right_bottom = to_chunk_position(_area.right_bottom)}
+	for x,y in iarea(chunk_area) do
+		_surface.request_to_generate_chunks({x=x*32 + 16,y=y*32 + 16}, 1)
 	end
 end
 
 function clear_subsurface(_surface, _position, _digging_radius, _clearing_radius)
 	if _digging_radius < 1 then return nil end -- min _digging_radius is 1 
-
 	local digging_subsurface_area = get_area(_position, _digging_radius - 1)
 	local new_tiles = {}
 
@@ -754,6 +916,9 @@ function clear_subsurface(_surface, _position, _digging_radius, _clearing_radius
 			end
 		end 
 	end
+
+	if not is_subsurface(_surface) then return end
+
 	local walls_destroyed = 0
 	for x, y in iarea(digging_subsurface_area) do
 		if _surface.get_tile(x, y).name ~= cavern_Ground_name then

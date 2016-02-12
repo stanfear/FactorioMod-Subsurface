@@ -53,6 +53,16 @@ data:extend(
       {"iron-plate", 2},
     },
     result = "mobile-borer"
+  },  
+  {
+    type = "recipe",
+    name = "fluid-elevator-mk1",
+    enabled = true,
+    ingredients =
+    {
+      {"iron-plate", 2},
+    },
+    result = "fluid-elevator-mk1"
   }, 
  })
  
