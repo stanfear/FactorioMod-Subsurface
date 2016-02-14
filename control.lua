@@ -1,29 +1,9 @@
 require "util"
 require "defines"
 require "lib"
+require "config"
 
-
--- configuration variables
-cavern_Wall_name = "subsurface-walls"
-cavern_Ground_name = "caveground"
-teleportation_time = 120
-elevator_size = 5
-max_pollution_move_active = 2 -- the max amount of pollution that can be moved per ticks from one surface to the above, only for active air-vent
-max_pollution_move_passive = 1 -- the max amount of pollution that can be moved per ticks from one surface to the above, only for passive air-vent
-max_apnea_time = 20*60
-apnea_threshold = 1000
-apnea_damage = 2.5
--- end configuration variables
-
--- state variables
-time_spent_dict = {}
--- end state variables
-
-
-
-
-script.on_init(function ()
-	
+function setup()
 	global.onTickFunctions = global.onTickFunctions or {}
 	global.elevator_association = global.elevator_association or {}
 	global.item_elevator = global.item_elevator or {}
@@ -34,50 +14,28 @@ script.on_init(function ()
 	global.Underground_driving_players = global.Underground_driving_players or {}
 	global.fluids_elevator = global.fluids_elevator or {}
 	global.waiting_entities = global.waiting_entities or {}
+	global.time_spent_dict = global.time_spent_dict or {}
 
 	-- move to where I create the first entrance ?
 	global.onTickFunctions["teleportation_check"] = teleportation_check
 	global.onTickFunctions["move_items"] = move_items
 
 	--global.onTickFunctions["debug"] = debug
-end)
-
-
-
-script.on_load(function ()
-
-	global.onTickFunctions = global.onTickFunctions or {}
-	global.onTickFunctions["teleportation_check"] = teleportation_check
-	global.onTickFunctions["move_items"] = move_items
-
-
-	global.elevator_association = global.elevator_association or {}
-	global.item_elevator = global.item_elevator or {}
-	global.surface_drillers = global.surface_drillers or {}
-	global.air_vents = global.air_vents or {}
-	global.underground_players = global.underground_players or {}
-	global.surface_associations = global.surface_associations or {}
-	global.Underground_driving_players = global.Underground_driving_players or {}
-	global.fluids_elevator = global.fluids_elevator or {}
-	global.waiting_entities = global.waiting_entities or {}
-
-	--global.onTickFunctions["debug"] = debug
-end)
+end
+script.on_init(setup)
+script.on_load(setup)
 
 -- when an entity is built (to create the tunnel exit)
-script.on_event(defines.events.on_built_entity, function(event) on_built_entity(event) end)
-script.on_event(defines.events.on_robot_built_entity, function(event) on_built_entity(event) end)
+script.on_event({defines.events.on_built_entity, defines.events.on_robot_built_entity}, function(event) on_built_entity(event) end)
 
 -- when a chunk is generated (to change all tunnel tiles to out-of-map)
-script.on_event(defines.events.on_chunk_generated, function (event) on_chunk_generated(event) end)
+script.on_event(defines.events.on_chunk_generated, function(event) on_chunk_generated(event) end)
 
 -- when a item is removed (to know when a wall is removed) /!\ will need to be removed when tiles are set to unminable
-script.on_event(defines.events.on_preplayer_mined_item,  function (event) on_pre_mined_item(event) end)
-script.on_event(defines.events.on_entity_died,  function (event) on_pre_mined_item(event) end)
-script.on_event(defines.events.on_robot_pre_mined,  function (event) on_pre_mined_item(event) end)
+script.on_event({defines.events.on_preplayer_mined_item, defines.events.on_entity_died, defines.events.on_robot_pre_mined}, function(event) on_pre_mined_item(event) end)
 
 -- when a item is removed (to know when a wall is removed) /!\ will need to be removed when tiles are set to unminable
-script.on_event(defines.events.on_player_driving_changed_state,  function (event) on_player_driving_changed_state(event) end)
+script.on_event(defines.events.on_player_driving_changed_state, function(event) on_player_driving_changed_state(event) end)
 
 --debug only -> to add stuff to the player on game start
 --script.on_event(defines.events.on_player_created,  function (event) startingItems(game.get_player(event.player_index)) end)
@@ -409,7 +367,7 @@ function teleportation_check(function_name)
 	--proximity test done only every 10 ticks (the player has to wait 120 ticks to transport, 10 more should'nt kill him)
 	if game.tick % 10 == 0 then
 		for _, player in ipairs(game.players) do
-			if not KeyExists(time_spent_dict, player.name) then -- only initiate his transportation if he's not already transporting
+			if not KeyExists(global.time_spent_dict, player.name) then -- only initiate his transportation if he's not already transporting
 				if not player.walking_state.walking then -- only transport a non walking player
 					local position = player.position
 					local search_area = {left_top = {x = position.x - 0.5, y = position.y - 0.5}, right_bottom = {x = position.x + 0.5, y = position.y + 0.5}}
@@ -425,7 +383,7 @@ function teleportation_check(function_name)
 							progressbar_container.add{type="progressbar", name="progressbar", size = 120}
 
 							-- add the player and some information to the list of transporting people
-							time_spent_dict[player.name] = {player = player, destination_entity = connected_entity, time_spent = 0, gui_element = progressbar_container}
+							global.time_spent_dict[player.name] = {player = player, destination_entity = connected_entity, time_spent = 0, gui_element = progressbar_container}
 							global.onTickFunctions["temp_teleportation_check"] = temp_teleportation_check
 						end
 					end
@@ -450,7 +408,7 @@ end
 
 function temp_teleportation_check(fct_name)
 
-	for player_name, data in pairs(time_spent_dict) do
+	for player_name, data in pairs(global.time_spent_dict) do
 		local stop_teleportation
 
 		data.time_spent = data.time_spent + 1
@@ -491,10 +449,10 @@ function temp_teleportation_check(fct_name)
 			end
 		end
 		if stop_teleportation then
-			time_spent_dict[player_name] = nil
+			global.time_spent_dict[player_name] = nil
 			gui_element.destroy()
 
-			if #time_spent_dict == 0 then
+			if #global.time_spent_dict == 0 then
 				global.onTickFunctions[fct_name] = nil
 			end
 		end
@@ -744,29 +702,23 @@ function remove_surface_player_elevator(_entity, _player) -- _player is the play
 	end
 
 	-- stop all current tp concerning the entity
-	for player_name, data in pairs(time_spent_dict) do
+	for player_name, data in pairs(global.time_spent_dict) do
 		if data.destination_entity == connected_entity or data.destination_entity == _entity then
 			data.destination_entity = nil
 		end
 	end
-	
 
 	--_entity.destroy()
 	connected_entity.destroy()
 
 	for _,belt in ipairs(current_association.surface_elevator.items_elevators) do
 		local key_string = string.format("%s&%s@{%d,%d}", surface_name, subsurface_name, belt.position.x, belt.position.y)
-		if global.item_elevator[key_string] then
+		elevator = global.item_elevator[key_string]
+		if elevator then
+			elevator.input.destroy()
+			elevator.output.destroy()
 			global.item_elevator[key_string] = nil
 		end
-
-		-- take content of the item and insert in player
-		belt.destroy()
-	end
-
-	for _,belt in ipairs(current_association.subsurface_elevator.items_elevators) do
-		-- take content of the item and insert in player
-		belt.destroy()
 	end
 
 	global.elevator_association[string.format("%s&%s@{%d,%d}", surface_name, subsurface_name, position.x, position.y)] = nil
@@ -971,5 +923,3 @@ function startingItems(player)
 
   player.insert{name="mobile-borer", count=1}
 end
-
-
