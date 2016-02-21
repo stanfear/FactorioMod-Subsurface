@@ -64,5 +64,17 @@ data:extend(
     },
     result = "fluid-elevator-mk1"
   }, 
+  
+  {
+    type = "recipe",
+    name = "dummy-air-vent-recipe",
+    enabled = true,
+    hidden = true,
+    category = "dummy-recipe-category",
+    energy_required = 10000,
+    ingredients = {},
+    result = "iron-plate"
+  }, 
+  
  })
  

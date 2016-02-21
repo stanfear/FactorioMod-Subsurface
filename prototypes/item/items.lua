@@ -13,17 +13,17 @@ data:extend(
   {
     type = "item",
     name = "air-vent",
-    icon = "__Subsurface__/graphics/entities/air-vent.png",
+    icon = "__Subsurface__/graphics/icons/air_vent_11_icon.png",
     flags = {"goes-to-quickbar"},
     subgroup = "production-machine",
     order = "a[air-vent-1]",
     place_result = "air-vent",
     stack_size = 50
-  },
+  }, 
   {
     type = "item",
     name = "active-air-vent",
-    icon = "__Subsurface__/graphics/entities/air-vent.png",
+    icon = "__Subsurface__/graphics/icons/air_vent_22_icon.png",
     flags = {"goes-to-quickbar"},
     subgroup = "production-machine",
     order = "a[air-vent-2]",

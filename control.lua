@@ -24,6 +24,7 @@ function setup()
 end
 script.on_init(setup)
 script.on_load(setup)
+script.on_configuration_changed(setup)
 
 -- when an entity is built (to create the tunnel exit)
 script.on_event({defines.events.on_built_entity, defines.events.on_robot_built_entity}, function(event) on_built_entity(event) end)
@@ -269,6 +270,7 @@ function pollution_moving(function_name)
 
 		if entitydata.active then
 			if entity.name == "active-air-vent" then
+				entity.get_output_inventory().clear()
 				if entity.energy > 0 then
 					local current_energy = entity.energy
 					entity.energy = 1000000000
@@ -279,13 +281,19 @@ function pollution_moving(function_name)
 					if pollution_to_move > max_movable_pollution then 
 						pollution_to_move = max_movable_pollution
 					end
-					entity.energy = entity.energy - ((pollution_to_move / max_pollution_move_active)*max_energy)
+					--entity.energy = entity.energy - ((pollution_to_move / max_pollution_move_active)*max_energy)
 					subsurface.pollute(entity.position, -pollution_to_move)
 					entity.surface.pollute(entity.position, pollution_to_move)
-
-					if pollution_to_move > 0 and game.tick % 5 == 0 then
-						entity.surface.create_entity{name="smoke-custom", position={x = entity.position.x, y = entity.position.y+1}, force=game.forces.neutral}
+					
+					if pollution_to_move > 0 then
+						entity.active = true
+						if game.tick % 10 == 0 then
+							entity.surface.create_entity{name="smoke-custom", position={x = entity.position.x+0.25, y = entity.position.y+1}, force=game.forces.neutral}
+						end
+					else
+						entity.active = false
 					end
+
 				end
 			elseif entity.name == "air-vent" then
 

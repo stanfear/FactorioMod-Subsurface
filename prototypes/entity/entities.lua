@@ -160,23 +160,25 @@ data:extend(
   {
     type = "assembling-machine",
     name = "active-air-vent",
-    icon = "__Subsurface__/graphics/entities/air-vent.png",
+    icon = "__Subsurface__/graphics/icons/air_vent_22_icon.png",
     flags = {"placeable-player", "player-creation"},
     minable = {hardness = 0.2, mining_time = 0.5, result = "active-air-vent"},
     max_health = 200,
-    crafting_categories = {"crafting"},
+    crafting_categories = {"dummy-recipe-category"},
+    fixed_recipe = "dummy-air-vent-recipe",
     ingredient_count = 0,
     collision_box = {{-0.8, -0.8}, {0.8, 0.8}},
     selection_box = {{-1, -1}, {1, 1}},
     animation =
     {
-      filename = "__Subsurface__/graphics/entities/air-vent.png",
+      filename = "__Subsurface__/graphics/entities/air_vent22_sheet.png",
       priority="high",
-      width = 30,
-      height = 28,
-      frame_count = 1,
-      line_length = 1,
-      shift = {0,0}
+      width = 96,
+      height = 96,
+      frame_count = 16,
+      line_length = 4,
+      shift = {0.45,-0.1},
+      animation_speed = 2,
     },
     crafting_speed = 1,
     energy_source =
@@ -186,49 +188,28 @@ data:extend(
       emissions = 0
     },
     energy_usage = "50kW",
-    open_sound = { filename = "__base__/sound/machine-open.ogg", volume = 0.85 },
-    close_sound = { filename = "__base__/sound/machine-close.ogg", volume = 0.75 },
-    vehicle_impact_sound =  { filename = "__base__/sound/car-metal-impact.ogg", volume = 0.65 },
-    working_sound =
-    {
-      sound = { filename = "__base__/sound/oil-refinery.ogg" },
-      idle_sound = { filename = "__base__/sound/idle1.ogg", volume = 0.6 },
-      apparent_volume = 2.5,
-    },
   },
-
 
   {
     type = "decorative",
     name = "air-vent",
     flags = {"placeable-neutral", "not-on-map"},
-    icon = "__Subsurface__/graphics/entities/air-vent.png",
+    collision_mask = { "item-layer", "object-layer", "player-layer", "water-tile"},
+    icon = "__Subsurface__/graphics/icons/air_vent_11_icon.png",
     minable = {mining_time = 1, result = "air-vent"},
     selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
     collision_box = {{-0.4, -0.4}, {0.4, 0.4}},
     render_layer = "decorative",
     max_health = 350,
     order = "z",
-    smoke =
-    {
-      {
-        name = "light-smoke",
-        north_position = {0.9, 0.0},
-        east_position = {-2.0, -2.0},
-        frequency = 10 / 32,
-        starting_vertical_speed = 0.08,
-        slow_down_factor = 1,
-        starting_frame_deviation = 60
-      }
-    },
     pictures =
     {
       {
-        filename = "__Subsurface__/graphics/entities/air-vent.png",
-        width = 30,
-        height = 28,
+        filename = "__Subsurface__/graphics/entities/air_vent_11.png",
+        width = 64,
+        height = 64,
       }
-    }
+    },
   },
 
   {
@@ -281,7 +262,7 @@ data:extend(
     duration = 120,
     fade_away_duration = 120,
     spread_duration = 120,
-    start_scale = 0.20,
+    start_scale = 0.6,
     end_scale = 1.0,
     cyclic = true,
     color = {r = 1, g = 1, b = 1, a = 0.9},
