@@ -270,7 +270,6 @@ function pollution_moving(function_name)
 
 		if entitydata.active then
 			if entity.name == "active-air-vent" then
-				entity.get_output_inventory().clear()
 				if entity.energy > 0 then
 					local current_energy = entity.energy
 					entity.energy = 1000000000

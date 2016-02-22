@@ -72,8 +72,8 @@ data:extend(
     hidden = true,
     category = "dummy-recipe-category",
     energy_required = 10000,
-    ingredients = {},
-    result = "iron-plate"
+    ingredients = {},    
+    results={{type="item", name="void", amount=1, probability=0},},
   }, 
   
  })

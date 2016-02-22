@@ -52,4 +52,13 @@ data:extend(
     stack_size = 10
   },
 
+    {
+    type = "item",
+    name = "void",
+    icon = "__base__/graphics/terrain/blank.png",
+    flags = {"goes-to-main-inventory", "hidden"},
+    subgroup = "void",
+    order = "void",
+    stack_size = 100
+  },
 })
