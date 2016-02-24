@@ -191,7 +191,7 @@ data:extend(
   },
 
   {
-    type = "decorative",
+    type = "simple-entity",
     name = "air-vent",
     flags = {"placeable-neutral", "not-on-map"},
     collision_mask = { "item-layer", "object-layer", "player-layer", "water-tile"},
