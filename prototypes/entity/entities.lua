@@ -1,3 +1,13 @@
+function blank4StorageTank()
+  return
+  {
+    filename = "__base__/graphics/terrain/blank.png",
+    priority = "high",
+    width = 0,
+    height = 0
+  }
+end
+
 data:extend(
 {
   {
@@ -21,7 +31,7 @@ data:extend(
       direction_count = 1,
       shift = {1.6, -1.1}
     },
-        connection_points =
+    connection_points =
     {
       {
         shadow =
@@ -137,14 +147,14 @@ data:extend(
     },
     pictures =
     {
-      single = {layers = {{filename = "__base__/graphics/terrain/blank.png", priority = "extra-high", width = 0, height = 0, shift = {0, 0}}}},
-      straight_vertical = {{layers = {{filename = "__base__/graphics/terrain/blank.png", priority = "extra-high", width = 0, height = 0, shift = {0, 0}}}}},
-      straight_horizontal = {{layers = {{filename = "__base__/graphics/terrain/blank.png", priority = "extra-high", width = 0, height = 0, shift = {0, 0}}}}},
-      corner_right_down = {layers = {{filename = "__base__/graphics/terrain/blank.png", priority = "extra-high", width = 0, height = 0, shift = {0, 0}}}},
-      corner_left_down = {layers = {{filename = "__base__/graphics/terrain/blank.png", priority = "extra-high", width = 0, height = 0, shift = {0, 0}}}},
-      t_up = {layers = {{filename = "__base__/graphics/terrain/blank.png", priority = "extra-high", width = 0, height = 0, shift = {0, 0}}}},
-      ending_right = {layers = {{filename = "__base__/graphics/terrain/blank.png", priority = "extra-high", width = 0, height = 0, shift = {0, 0}}}},
-      ending_left = {layers = {{filename = "__base__/graphics/terrain/blank.png", priority = "extra-high", width = 0, height = 0, shift = {0, 0}}}},
+      single = {layers = {{filename = "__base__/graphics/terrain/blank.png", priority = "high", width = 0, height = 0, shift = {0, 0}}}},
+      straight_vertical = {{layers = {{filename = "__base__/graphics/terrain/blank.png", priority = "high", width = 0, height = 0, shift = {0, 0}}}}},
+      straight_horizontal = {{layers = {{filename = "__base__/graphics/terrain/blank.png", priority = "high", width = 0, height = 0, shift = {0, 0}}}}},
+      corner_right_down = {layers = {{filename = "__base__/graphics/terrain/blank.png", priority = "high", width = 0, height = 0, shift = {0, 0}}}},
+      corner_left_down = {layers = {{filename = "__base__/graphics/terrain/blank.png", priority = "high", width = 0, height = 0, shift = {0, 0}}}},
+      t_up = {layers = {{filename = "__base__/graphics/terrain/blank.png", priority = "high", width = 0, height = 0, shift = {0, 0}}}},
+      ending_right = {layers = {{filename = "__base__/graphics/terrain/blank.png", priority = "high", width = 0, height = 0, shift = {0, 0}}}},
+      ending_left = {layers = {{filename = "__base__/graphics/terrain/blank.png", priority = "high", width = 0, height = 0, shift = {0, 0}}}},
     }
   },
 
@@ -639,5 +649,199 @@ data:extend(
       apparent_volume = 1.5,      
     },
   },
+
+  {
+    type = "car",
+    name = "independant-item-elevator-placer",
+    icon = "__Subsurface__/graphics/icons/Tunnels-icon.png",
+    flags = {"placeable-player", "player-creation", "building-direction-8-way"},
+    max_health = 1500,
+    corpse = "medium-remnants",
+    dying_explosion = "medium-explosion",
+    render_layer = "object",
+    energy_per_hit_point = 0.2,
+    order="z",
+    collision_box = {{-0.8, -0.8}, {0.8, 0.8}},
+    selection_box = {{-1, -1}, {1, 1}},
+    effectivity = 0,
+    braking_power = "0W",
+    burner =
+    {
+      effectivity = 0.01,
+      fuel_inventory_size = 1,
+    },
+    consumption = "0W",
+    friction = 1,
+    light = {{intensity = 0, size = 0},},
+    animation =
+    {
+      layers =
+      {
+        {
+          frame_count = 1,
+          direction_count = 8,
+          width = 64,
+          height = 64,
+          shift = {0,0},
+          priority = "high",
+          stripes =
+          {
+            {
+             filename = "__Subsurface__/graphics/entities/item-elevator-top.png",
+             width_in_frames = 4,
+             height_in_frames = 1,
+            },
+            {
+             filename = "__Subsurface__/graphics/entities/item-elevator-bottom.png",
+             width_in_frames = 4,
+             height_in_frames = 1,
+            },
+          }
+        },
+      }
+    },
+    sound_no_fuel =
+    {
+      {
+        filename = "__base__/sound/fight/car-no-fuel-1.ogg",
+        volume = 0.6
+      },
+    },
+    stop_trigger_speed = 0.2,
+    stop_trigger =
+    {
+      {
+        type = "play-sound",
+        sound =
+        {
+          {
+            filename = "__base__/sound/car-breaks.ogg",
+            volume = 0.6
+          },
+        }
+      },
+    },
+    sound_minimum_speed = 0.2;
+    vehicle_impact_sound =  { filename = "__base__/sound/car-metal-impact.ogg", volume = 0.65 },
+    working_sound =
+    {
+      sound =
+      {
+        filename = "__base__/sound/car-engine.ogg",
+        volume = 0.6
+      },
+      activate_sound =
+      {
+        filename = "__base__/sound/car-engine-start.ogg",
+        volume = 0.6
+      },
+      deactivate_sound =
+      {
+        filename = "__base__/sound/car-engine-stop.ogg",
+        volume = 0.6
+      },
+      match_speed_to_activity = true,
+    },
+    open_sound = { filename = "__base__/sound/car-door-open.ogg", volume=0.7 },
+    close_sound = { filename = "__base__/sound/car-door-close.ogg", volume = 0.7 },
+    rotation_speed = 0.001,
+    weight = 35000,
+    tank_driving = true,
+    inventory_size = 30
+  },
+
+
+  {
+    type = "storage-tank",
+    name = "independant-item-elevator-upperside",
+    icon = "__base__/graphics/icons/storage-tank.png",
+    flags = {},
+    minable = {mining_time = 1, result = "independant-item-elevator"},
+    max_health = 300,
+    corpse = "small-remnants",
+    collision_box = {{-1, -1}, {1, 1}},
+    selection_box = {{-1, -1}, {1, 1}},
+    fluid_box =
+    {
+      base_area = 10,
+      base_level = -1,
+      pipe_connections = {},
+    },
+    window_bounding_box = {{-0.125, 0.6875}, {0.1875, 1.1875}},
+    pictures =
+    {
+      picture =
+      {
+        sheet =
+        {
+          filename = "__Subsurface__/graphics/entities/item-elevator-top.png",
+          priority = "extra-high",
+          frames = 4,
+          width = 64,
+          height = 64,
+          shift = {0, 0}
+        }
+      },
+      fluid_background = blank4StorageTank(),
+      window_background = blank4StorageTank(),
+      flow_sprite = blank4StorageTank(),
+    },
+    flow_length_in_ticks = 0,
+    circuit_wire_connection_points =
+    {
+      {shadow = { red = {0, 0}, green = {0,0} },  wire = { red = {0, 0}, green = {0,0} },},
+      {shadow = { red = {0, 0}, green = {0,0} },  wire = { red = {0, 0}, green = {0,0} },},
+      {shadow = { red = {0, 0}, green = {0,0} },  wire = { red = {0, 0}, green = {0,0} },},
+      {shadow = { red = {0, 0}, green = {0,0} },  wire = { red = {0, 0}, green = {0,0} },},
+    },
+    circuit_wire_max_distance = 0,        
+  },
+
+  {
+    type = "storage-tank",
+    name = "independant-item-elevator-lowerside",
+    icon = "__base__/graphics/icons/storage-tank.png",
+    flags = {},
+    minable = {mining_time = 1, result = "independant-item-elevator"},
+    max_health = 300,
+    corpse = "small-remnants",
+    collision_box = {{-1, -1}, {1, 1}},
+    selection_box = {{-1, -1}, {1, 1}},
+    fluid_box =
+    {
+      base_area = 10,
+      base_level = -1,
+      pipe_connections = {},
+    },
+    window_bounding_box = {{-0.125, 0.6875}, {0.1875, 1.1875}},
+    pictures =
+    {
+      picture =
+      {
+        sheet =
+        {
+          filename = "__Subsurface__/graphics/entities/item-elevator-bottom.png",
+          priority = "extra-high",
+          frames = 4,
+          width = 64,
+          height = 64,
+          shift = {0, 0}
+        }
+      },
+      fluid_background = blank4StorageTank(),
+      window_background = blank4StorageTank(),
+      flow_sprite = blank4StorageTank(),
+    },
+    flow_length_in_ticks = 0,
+    circuit_wire_connection_points =
+    {
+      {shadow = { red = {0, 0}, green = {0,0} },  wire = { red = {0, 0}, green = {0,0} },},
+      {shadow = { red = {0, 0}, green = {0,0} },  wire = { red = {0, 0}, green = {0,0} },},
+      {shadow = { red = {0, 0}, green = {0,0} },  wire = { red = {0, 0}, green = {0,0} },},
+      {shadow = { red = {0, 0}, green = {0,0} },  wire = { red = {0, 0}, green = {0,0} },},
+    },
+    circuit_wire_max_distance = 0,        
+  },
+
 }
 )

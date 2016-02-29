@@ -76,5 +76,15 @@ data:extend(
     results={{type="item", name="iron-plate", amount=1, probability=0},},
   }, 
   
+  {
+    type = "recipe",
+    name = "independant-item-elevator",
+    enabled = true,
+    ingredients =
+    {
+      {"iron-plate", 2},
+    },
+    result = "independant-item-elevator"
+  },  
  })
  

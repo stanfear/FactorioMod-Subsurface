@@ -52,4 +52,15 @@ data:extend(
     stack_size = 10
   },
 
+  {
+    type = "item",
+    name = "independant-item-elevator",
+    icon = "__base__/graphics/icons/car.png",
+    flags = {"goes-to-quickbar"},
+    subgroup = "transport",
+    order = "b[personal-transport]-a[car]",
+    place_result = "independant-item-elevator-placer",
+    stack_size = 10
+  },
+
 })

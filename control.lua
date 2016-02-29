@@ -83,47 +83,123 @@ end
 
 function check_waiting_entities(function_name)
 	for id, entitypair in ipairs(global.waiting_entities) do
-		local entity = entitypair.entity
-		local icon = entitypair.icon
-		local entity_collision_box = entity.prototype.collision_box
-		local entity_area = {}
-		entity_area.left_top = {x = entity.position.x + entity_collision_box.left_top.x, y = entity.position.y + entity_collision_box.left_top.y}
-		entity_area.right_bottom = {x = entity.position.x + entity_collision_box.right_bottom.x, y = entity.position.y + entity_collision_box.right_bottom.y}
-		if game.tick % 60 == 0 then
-			if icon.valid then
-				icon.destroy()
-			else
-				icon = entity.surface.create_entity{name = "boring-in-progress", position = {x = entity.position.x, y = entity.position.y -0.25}, force=entity.force}
-				entitypair.icon = icon
+		if entitypair.entity.valid then
+			local entity = entitypair.entity
+			local icon = entitypair.icon
+			local entity_collision_box = entity.prototype.collision_box
+			local entity_area = {}
+			entity_area.left_top = {x = entity.position.x + entity_collision_box.left_top.x, y = entity.position.y + entity_collision_box.left_top.y}
+			entity_area.right_bottom = {x = entity.position.x + entity_collision_box.right_bottom.x, y = entity.position.y + entity_collision_box.right_bottom.y}
+			if game.tick % 60 == 0 then
+				if icon.valid then
+					icon.destroy()
+				else
+					icon = entity.surface.create_entity{name = "boring-in-progress", position = {x = entity.position.x, y = entity.position.y -0.25}, force=entity.force}
+					entitypair.icon = icon
+				end
 			end
-		end
-		if is_area_gen(entity_area, get_subsurface(entity.surface)) then
-			local complementary_entity = place_complementary_entity(entity)
+			if is_area_gen(entity_area, get_complementary_surface(entity)) then
+				local complementary_entity = place_complementary_entity(entity)
+				add_association_data(entity, complementary_entity)
+				if icon.valid then
+					icon.destroy()
+				end
+				global.waiting_entities[id] = nil
+			end
+		else
+			local icon = entitypair.icon
 			if icon.valid then
 				icon.destroy()
 			end
 			global.waiting_entities[id] = nil
-
-			if entity.name == "fluid-elevator-mk1" then 
-				local data = {}
-				if entity.direction < 4 then
-					data.top_entity = entity
-					data.bottom_entity = complementary_entity
-				else
-					data.bottom_entity = entity
-					data.top_entity = complementary_entity
-				end
-				table.insert(global.fluids_elevator, data)
-			end
-
-			if not global.onTickFunctions["fluids_elevator_management"] then
-				global.onTickFunctions["fluids_elevator_management"] = fluids_elevator_management
-			end
 		end
 	end
 	if associative_table_count(global.waiting_entities) == 0 then
 		global.onTickFunctions[function_name] = nil
 	end
+end
+
+function add_association_data(_entity, _complementary_entity)
+	if _entity.name == "fluid-elevator-mk1" then 
+		local data = {}
+		if _entity.direction < 4 then
+			data.top_entity = _entity
+			data.bottom_entity = _complementary_entity
+		else
+			data.bottom_entity = _entity
+			data.top_entity = _complementary_entity
+		end
+		table.insert(global.fluids_elevator, data)
+
+		if not global.onTickFunctions["fluids_elevator_management"] then
+			global.onTickFunctions["fluids_elevator_management"] = fluids_elevator_management
+		end
+
+	elseif string.find(_entity.name, "independant%-item%-elevator") then
+		add_elevators = function (_entity)
+			if string.find(_entity.name, "upperside") then
+				if _entity.direction == defines.direction.north then
+					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
+					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
+				elseif _entity.direction == defines.direction.east then
+					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
+					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
+				elseif _entity.direction == defines.direction.south then
+					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
+					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
+				elseif _entity.direction == defines.direction.west then
+					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
+					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
+				end
+			else -- if string.find(_entity.name, "lowerside")
+				if _entity.direction == defines.direction.north then
+					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
+					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
+				elseif _entity.direction == defines.direction.east then
+					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
+					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
+				elseif _entity.direction == defines.direction.south then
+					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
+					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
+				elseif _entity.direction == defines.direction.west then
+					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
+					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
+				end
+			end
+			input_item_elevator.destructible = false
+			input_item_elevator.minable = false
+			input_item_elevator.rotatable = false
+			input_item_elevator.direction = _entity.direction
+			output_item_elevator.destructible = false
+			output_item_elevator.minable = false
+			output_item_elevator.rotatable = false
+			output_item_elevator.direction = _entity.direction
+			return input_item_elevator, output_item_elevator
+		end
+
+		input1, output1 = add_elevators(_entity)
+		input_complementary, output_complementary = add_elevators(_complementary_entity)
+
+		local surface = string.find(_entity.name, "upperside") and _entity.surface or _complementary_entity.surface
+		local subsurface = string.find(_entity.name, "lowerside") and  _complementary_entity.surface or _entity.surface
+
+		global.item_elevator[string.format("%s&%s@{%d,%d}&{%d,%d}", 
+				surface.name, 
+				subsurface.name, 
+				input1.position.x, 
+				input1.position.y,
+				output_complementary.position.x, 
+				output_complementary.position.y)] = {input = input1,   output = output_complementary}
+		global.item_elevator[string.format("%s&%s@{%d,%d}&{%d,%d}", 
+				surface.name, 
+				subsurface.name, 
+				input_complementary.position.x, 
+				input_complementary.position.y,
+				output1.position.x, 
+				output1.position.y)] = {input = input_complementary,   output = output1}
+	end
+
+	
 end
 
 function is_area_gen(_area, _surface)
@@ -139,20 +215,55 @@ function is_area_gen(_area, _surface)
 	return true
 end
 
-function place_complementary_entity(_entity)
-	local complementary_entity
+function get_complementary_surface(_entity)
+	local complementary_surface
 	if _entity.name == "fluid-elevator-mk1" then 
-		local complementary_surface
 		if _entity.direction < 4 then
 			complementary_surface = get_subsurface(_entity.surface)
 		else
 			complementary_surface = get_oversurface(_entity.surface)
 		end
+	elseif string.find(_entity.name, "independant%-item%-elevator") then
+		if string.find(_entity.name, "upperside") then
+			complementary_surface = get_subsurface(_entity.surface)
+		else -- if string.find(_entity.name, "lowerside")
+			complementary_surface = get_oversurface(_entity.surface)
+		end
+	else
+		message(string.find(_entity.name, "independant-item-elevator") and "yes" or "nop")
+		message("[[Subsurface] get_complementary_surface] error, entity not known : " .. _entity.name)
+		return nil
+	end
+
+	return complementary_surface
+end
+
+function place_complementary_entity(_entity)
+	local complementary_entity
+	if _entity.name == "fluid-elevator-mk1" then 
+		local complementary_surface = get_complementary_surface(_entity)
 
 		clear_subsurface(complementary_surface, _entity.position, 2, 1)
 
 		complementary_entity = complementary_surface.create_entity{name = "fluid-elevator-mk1", position = _entity.position, force=_entity.force}
 		complementary_entity.direction = (_entity.direction + 4) % 8
+
+	elseif string.find(_entity.name, "independant%-item%-elevator") then
+		local complementary_entity_name
+		local complementary_surface
+		if string.find(_entity.name, "upperside") then
+			complementary_entity_name = "independant-item-elevator-lowerside"
+			complementary_surface = get_subsurface(_entity.surface)
+		else -- if string.find(_entity.name, "lowerside")
+			complementary_entity_name = "independant-item-elevator-upperside"
+			complementary_surface = get_oversurface(_entity.surface)
+		end
+
+		clear_subsurface(complementary_surface, _entity.position, 1.5, 0.5)
+
+		complementary_entity = complementary_surface.create_entity{name = complementary_entity_name, position = _entity.position, force=_entity.force}
+		complementary_entity.direction = _entity.direction
+
 	else
 		message("error, entity not known")
 		return nil
@@ -351,8 +462,11 @@ end
 
 
 function move_items(function_name)
-	for _,elevator in pairs(global.item_elevator) do
-		if elevator.input.active or elevator.output.active then
+	for key,elevator in pairs(global.item_elevator) do
+		if not(elevator.input.valid and elevator.output.valid) then
+			if elevator.input.valid then elevator.input.destroy() end
+			if elevator.output.valid then elevator.output.destroy() end
+		elseif elevator.input.active or elevator.output.active then
 			for laneI=1,2 do
 				lane_input = elevator.input.get_transport_line(laneI)
 				lane_output = elevator.output.get_transport_line(laneI)
@@ -777,6 +891,22 @@ function on_pre_mined_item(event)
 		end
 
 		global.surface_drillers[string.format("%s@{%d,%d}", entity.surface.name, entity.position.x, entity.position.y)] = nil
+	elseif string.find(entity.name, "independant%-item%-elevator") then
+		for _,v in ipairs(entity.surface.find_entities_filtered{area = get_area(entity.position, 0.5), type="transport-belt"}) do
+		 	v.destroy()
+		end 
+		local comp_surface = get_complementary_surface(entity)
+		for _,v in ipairs(comp_surface.find_entities_filtered{area = get_area(entity.position, 0.5), type="transport-belt"}) do
+		 	v.destroy()
+		end
+		local complementary_entity_name
+		if string.find(entity.name, "upperside") then
+			complementary_entity_name = "independant-item-elevator-lowerside"
+		else -- if string.find(entity.name, "lowerside")
+			complementary_entity_name = "independant-item-elevator-upperside"
+		end
+		comp_surface.find_entity(complementary_entity_name, entity.position).destroy()
+
 
 	elseif entity.name == "active-air-vent" or entity.name == "air-vent" then
 		global.air_vents[string.format("%s@{%d,%d}", entity.surface.name, entity.position.x, entity.position.y)] = nil
@@ -812,6 +942,50 @@ function on_built_entity(event)
 		global.surface_drillers[string.format("%s@{%d,%d}", entity.surface.name, entity.position.x, entity.position.y)] = {entity = entity, drilling_performed = 0, last_crafting_progress = 0, description_floating_text = desc, progression_floating_text = progress, state_active = false, progress = 0}
 		global.onTickFunctions["drilling"] = on_tick_drilling
 		
+	elseif entity.name == "independant-item-elevator-placer" then
+		local direction = math.floor(entity.orientation * 8)
+
+		local complementary_surface
+		if direction >= 4 and not is_subsurface(entity.surface) then
+			message("the lower part of an elevator can only be placed in a subsurface !")
+			direction = (direction + 4) % 8
+			complementary_surface = get_subsurface(entity.surface)
+		elseif entity.direction >= 4 and is_subsurface(entity.surface) then
+			complementary_surface = get_oversurface(entity.surface)
+		else
+			complementary_surface = get_subsurface(entity.surface)
+		end
+
+		local old_entity = entity
+
+		local entity_name
+		local new_direction
+		local input_item_elevator
+		local output_item_elevator
+		if direction < 4 then
+			entity_name = "independant-item-elevator-upperside"
+			new_direction = direction * 2
+		elseif direction >= 4 then
+			entity_name = "independant-item-elevator-lowerside"
+			new_direction = (direction - 4) * 2
+		end
+
+		local entity = entity.surface.create_entity{name = entity_name, position = entity.position, force=entity.force}
+		entity.direction = new_direction
+
+		old_entity.destroy()
+
+		local icon = entity.surface.create_entity{name = "boring-in-progress", position = {x = entity.position.x, y = entity.position.y -0.25}, force=entity.force}
+		table.insert(global.waiting_entities, {entity = entity, icon = icon})
+
+		local entity_collision_box = entity.prototype.collision_box
+		local entity_area = {}
+		entity_area.left_top = {x = entity.position.x + entity_collision_box.left_top.x, y = entity.position.y + entity_collision_box.left_top.y}
+		entity_area.right_bottom = {x = entity.position.x + entity_collision_box.right_bottom.x, y = entity.position.y + entity_collision_box.right_bottom.y}
+		
+		request_area_gen(entity_area, complementary_surface)
+		global.onTickFunctions["check_waiting_entities"] = check_waiting_entities
+
 	elseif entity.name == "active-air-vent" or entity.name == "air-vent" then
 
 		-- generate chunk in the subsurface (just in case)
@@ -907,26 +1081,8 @@ end
 
 function startingItems(player)
   player.insert{name="iron-plate", count=100}
-  player.insert{name="pistol", count=1}
-  player.insert{name="basic-bullet-magazine", count=100}
-  player.insert{name="wooden-chest", count=64}
-  player.insert{name="small-electric-pole", count=32}
-  player.insert{name="basic-inserter", count=64}
-  player.insert{name="solar-panel", count=54}
-  player.insert{name="basic-transport-belt", count=128}
-  player.insert{name="steam-engine", count=16}
-  player.insert{name="boiler", count=32}
-  player.insert{name="lab", count=8}
-  player.insert{name="pipe", count=64}
-  player.insert{name="basic-mining-drill", count=32}
-  player.insert{name="basic-transport-belt-to-ground", count=32}
-  player.insert{name="pipe-to-ground", count=32}
-  player.insert{name="basic-splitter", count=32}
-  player.insert{name="coal", count=128}
-  player.insert{name="raw-wood", count=128}
-  player.insert{name="car", count=1}
-  player.insert{name="chemical-plant", count=8}
-  player.insert{name="assembling-machine-3", count=8}
+  player.insert{name="solar-panel", count=50}
+  player.insert{name="substation", count=50}
 
   player.insert{name="mobile-borer", count=1}
 end
