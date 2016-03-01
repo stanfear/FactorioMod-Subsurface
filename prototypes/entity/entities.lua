@@ -523,7 +523,7 @@ data:extend(
     collision_box = {{-0.7, -0.7}, {0.7, 0.7}},
     selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
     selectable_in_game = false,
-    render_layer = "air-object",
+    render_layer = "entity-info-icon",
     pictures =
     {
       {
