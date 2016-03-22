@@ -85,6 +85,44 @@ data:extend(
       {"iron-plate", 2},
     },
     result = "independant-item-elevator"
-  },  
+  },    
+
+  {
+    type = "recipe",
+    name = "digging-robots-deployment-center",
+    enabled = true,
+    ingredients =
+    {
+      {"iron-plate", 2},
+    },
+    result = "digging-robots-deployment-center"
+  },
+
+  {
+    type = "recipe",
+    name = "assemble-digging-robots",
+    enabled = true,
+    ingredients =
+    {
+      {"iron-plate", 2},
+    },
+    result = "assembled-digging-robots"
+  },
+
+  {
+    type = "recipe",
+    name = "deploy-digging-robots",
+    enabled = true,
+    hidden = true,
+    category = "deploy-entity",
+    ingredients =
+    {
+      {"assembled-digging-robots", 1},
+    },
+    result = "prepared-digging-robots"
+  },
+
+
+
  })
  

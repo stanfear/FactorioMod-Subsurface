@@ -15,6 +15,10 @@ function setup()
 	global.fluids_elevator = global.fluids_elevator or {}
 	global.waiting_entities = global.waiting_entities or {}
 	global.time_spent_dict = global.time_spent_dict or {}
+	global.selection_area_markers_per_player = global.selection_area_markers_per_player or {}
+	global.marked_for_digging = global.marked_for_digging or {}
+	global.digging_pending = global.digging_pending or {}
+	global.digging_robots_deployment_centers = global.digging_robots_deployment_centers or {}
 
 	-- move to where I create the first entrance ?
 	global.onTickFunctions["teleportation_check"] = teleportation_check
@@ -38,9 +42,14 @@ script.on_event({defines.events.on_preplayer_mined_item, defines.events.on_entit
 -- when a item is removed (to know when a wall is removed) /!\ will need to be removed when tiles are set to unminable
 script.on_event(defines.events.on_player_driving_changed_state, function(event) on_player_driving_changed_state(event) end)
 
---debug only -> to add stuff to the player on game start
---script.on_event(defines.events.on_player_created,  function (event) startingItems(game.get_player(event.player_index)) end)
+-- to handle digging automation
+script.on_event(defines.events.on_put_item, function(event) on_put_item(event) end)
 
+
+--debug only -> to add stuff to the player on game start
+script.on_event(defines.events.on_player_created,  function (event) startingItems(game.get_player(event.player_index)) end)
+
+script.on_event(defines.events.on_player_rotated_entity, function(event) on_player_rotated_entity(event) end)
 
 script.on_event(defines.events.on_tick, 
 	function(event) 
@@ -78,6 +87,121 @@ function debug(function_name)
 	--gpp("chunk position : " .. top_left .. "-" ..top_center .. "-" ..top_right .. " | " .. center_left .. "-" ..center_center .. "-" ..center_right .. " | " .. bottom_left .. "-" ..bottom_center .. "-" ..bottom_right)
 	
 	return true
+end
+
+
+function digging_robots_manager(function_name)
+	for id,data in ipairs(global.digging_robots_deployment_centers) do
+		if data.deployment_center.valid then
+			if global.digging_pending[data.deployment_center.surface.name] then
+				if not(data.deployed_unit_group) then
+					if data.deployment_center.get_inventory(defines.inventory.assembling_machine_output).get_item_count("prepared-digging-robots") >= 1 then
+						local destination = find_nearest_marked_for_digging(data.deployment_center.position, data.deployment_center.surface)
+						if destination then
+							-- deploy digger
+							local entity_name = "medium-biter"
+							local deployment_position = data.deployment_center.surface.find_non_colliding_position(entity_name, data.deployment_center.position, 5, 0.1)
+							data.deployed_unit_group = data.deployment_center.surface.create_unit_group{position = deployment_position, force = data.deployment_center.force}
+							local target_wall = data.deployment_center.surface.find_entity(cavern_Wall_name,{x = math.floor(destination.x) + 0.5, y = math.floor(destination.y) + 0.5})
+							if deployment_position then
+								local entity = data.deployment_center.surface.create_entity{
+									name=entity_name, 
+									position=deployment_position,
+									force=data.deployment_center.force}
+
+								data.deployment_center.get_inventory(defines.inventory.assembling_machine_output).remove({name="prepared-digging-robots", count=1})
+								data.deployed_unit_group.add_member(entity)
+								data.deployed_unit_group.set_command({type=defines.command.attack, target=target_wall, distraction=defines.distraction.none})
+								data.deployed_unit_group.start_moving()
+
+								entity.set_command({type=defines.command.group, group = data.deployed_unit_group, distraction=defines.distraction.none})
+
+							end
+						end
+					end
+				else
+					if data.deployed_unit_group.valid then
+						local state
+						if data.deployed_unit_group.state == defines.groupstate.gathering then state = "gathering" end
+						if data.deployed_unit_group.state == defines.groupstate.moving then state = "moving" end
+						if data.deployed_unit_group.state == defines.groupstate.attacking_distraction then state = "attacking_distraction" end
+						if data.deployed_unit_group.state == defines.groupstate.attacking_target then state = "attacking_target" end
+						if data.deployed_unit_group.state == defines.groupstate.finished then state = "finished" end
+						message(state)
+					end
+				end
+			end
+
+		else
+			table.remove(global.digging_robots_deployment_centers, id)
+		end
+	end
+	if #global.digging_robots_deployment_centers == 0 then
+		global.onTickFunctions[function_name] = nil
+	end
+end
+
+function on_put_item(event)
+	local player = game.get_player(event.player_index)
+    local item = player.cursor_stack
+	local position = event.position
+	if item.valid_for_read and item.name == "digging-planner" then 
+		if global.selection_area_markers_per_player[event.player_index] == nil then
+			if is_subsurface(player.surface) then 
+				local entity = player.surface.create_entity{name = "selection-marker", position = position, force=player.force}
+				global.selection_area_markers_per_player[event.player_index] = entity
+				global.onTickFunctions["digging_planner_check"] = digging_planner_check
+			end
+		else -- secound marker => the area has been selected
+			local marker_one_position = global.selection_area_markers_per_player[event.player_index].position
+			local selected_area = {left_top = {}, right_bottom = {}}
+			if marker_one_position.x < position.x then
+				selected_area.left_top.x = marker_one_position.x
+				selected_area.right_bottom.x = position.x
+			else
+				selected_area.left_top.x = position.x
+				selected_area.right_bottom.x = marker_one_position.x
+			end
+			if marker_one_position.y < position.y then
+				selected_area.left_top.y = marker_one_position.y
+				selected_area.right_bottom.y = position.y
+			else
+				selected_area.left_top.y = position.y
+				selected_area.right_bottom.y = marker_one_position.y
+			end
+			global.selection_area_markers_per_player[event.player_index].destroy()
+			global.selection_area_markers_per_player[event.player_index] = nil
+
+			for x,y in iarea(selected_area) do
+				if player.surface.get_tile(x, y).name == "out-of-map" then
+					if global.marked_for_digging[string.format("%s&@{%d,%d}", player.surface.name, math.floor(x), math.floor(y))] == nil then
+						local marking_entity = player.surface.create_entity{name = "digging-marker", position = {x = x, y = y}, force=game.forces.neutral}
+						global.marked_for_digging[string.format("%s&@{%d,%d}", marking_entity.surface.name, math.floor(x), math.floor(y))] = marking_entity
+					end
+				elseif player.surface.get_tile(x, y).name == "cave-walls" then
+					if global.digging_pending[player.surface.name] == nil then global.digging_pending[player.surface.name] = {} end
+					if global.digging_pending[player.surface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))] == nil then 
+						local pending_entity = player.surface.create_entity{name = "pending-digging", position = {x = x, y = y}, force=game.forces.neutral}
+						global.digging_pending[player.surface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))] = pending_entity
+					end
+				end
+			end
+		end
+
+	end
+end
+
+function digging_planner_check(function_name)
+	for player_index, entity in ipairs(global.selection_area_markers_per_player) do
+		local player = game.get_player(player_index)
+		if not player.cursor_stack.valid_for_read or player.cursor_stack.name ~= "digging-planner" or player.surface ~= entity.surface then 
+			global.selection_area_markers_per_player[player_index].destroy()
+			global.selection_area_markers_per_player[player_index] = nil
+		end
+	end
+	if associative_table_count(global.selection_area_markers_per_player) == 0 then
+		global.onTickFunctions[function_name] = nil
+	end
 end
 
 
@@ -1020,7 +1144,15 @@ function on_built_entity(event)
 		request_area_gen(entity_area, complementary_surface)
 		global.onTickFunctions["check_waiting_entities"] = check_waiting_entities
 
+	elseif entity.name == "selection-marker" then
+		if not game.get_player(event.player_index).cursor_stack.valid_for_read then 
+			game.get_player(event.player_index).cursor_stack.set_stack{ name = "digging-planner", count = 1 }
+		end
+		entity.destroy()
 
+	elseif entity.name == "digging-robots-deployment-center" then
+		table.insert(global.digging_robots_deployment_centers, {deployment_center = entity})
+		global.onTickFunctions["digging_robots_manager"] = digging_robots_manager
 	end
 end
 
@@ -1057,7 +1189,20 @@ function clear_subsurface(_surface, _position, _digging_radius, _clearing_radius
 		if _surface.get_tile(x, y).name ~= cavern_Ground_name then
 			table.insert(new_tiles, {name = cavern_Ground_name, position = {x, y}})
 		end
-		
+
+		if global.marked_for_digging[string.format("%s&@{%d,%d}", _surface.name, math.floor(x), math.floor(y))] then -- remove the mark
+			if global.marked_for_digging[string.format("%s&@{%d,%d}", _surface.name, math.floor(x), math.floor(y))].valid then
+				global.marked_for_digging[string.format("%s&@{%d,%d}", _surface.name, math.floor(x), math.floor(y))].destroy()
+			end
+			global.marked_for_digging[string.format("%s&@{%d,%d}", _surface.name, math.floor(x), math.floor(y))] = nil
+		end
+		if global.digging_pending[_surface.name] and global.digging_pending[_surface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))] then -- remove the digging pending entity
+			if global.digging_pending[_surface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))].valid then
+				global.digging_pending[_surface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))].destroy()
+			end
+			global.digging_pending[_surface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))] = nil
+		end
+
 		local wall = _surface.find_entity(cavern_Wall_name, {x = x, y = y})
 		if wall then 
 			wall.destroy()
@@ -1065,13 +1210,29 @@ function clear_subsurface(_surface, _position, _digging_radius, _clearing_radius
 		else
 		end
 	end
+	local to_add = {}
 	for x, y in iouter_area_border(digging_subsurface_area) do
 		if _surface.get_tile(x, y).name == "out-of-map" then
 			table.insert(new_tiles, {name = "cave-walls", position = {x, y}})
 			_surface.create_entity{name = cavern_Wall_name, position = {x, y}, force=game.forces.neutral}
+			if global.marked_for_digging[string.format("%s&@{%d,%d}", _surface.name, math.floor(x), math.floor(y))] then -- manage the marked for digging cells
+				if global.digging_pending[_surface.name] == nil then global.digging_pending[_surface.name] = {} end
+				if global.digging_pending[_surface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))] == nil then 
+					table.insert(to_add, {surface = _surface,x = x, y = y})
+				end
+				global.marked_for_digging[string.format("%s&@{%d,%d}", _surface.name, math.floor(x), math.floor(y))].destroy()
+				global.marked_for_digging[string.format("%s&@{%d,%d}", _surface.name, math.floor(x), math.floor(y))] = nil
+			end
 		end
 	end
 	_surface.set_tiles(new_tiles)
+
+	-- done after because set_tiles remove decorations
+	for _,data in ipairs(to_add) do
+		local pending_entity = data.surface.create_entity{name = "pending-digging", position = {x = data.x, y = data.y}, force=game.forces.neutral}
+		global.digging_pending[data.surface.name][string.format("{%d,%d}", math.floor(data.x), math.floor(data.y))] = pending_entity
+	end
+
 	return walls_destroyed
 end
 
@@ -1083,6 +1244,57 @@ function startingItems(player)
   player.insert{name="iron-plate", count=100}
   player.insert{name="solar-panel", count=50}
   player.insert{name="substation", count=50}
+  player.insert{name="basic-accumulator", count=50}
+  player.insert{name="digging-planner", count=1}
 
-  player.insert{name="mobile-borer", count=1}
+  player.force.research_all_technologies()
+end
+
+
+-- A* inspired algorithme to find the closest digging pending position
+function find_nearest_marked_for_digging(_position, _surface)
+
+	local starting_node = {position = _position, surface = _surface, cost = 0}
+	local open_list = {}
+	local closed_list = {}
+	local open_list_data = {}
+	local inactive_cells_list = {}
+
+	function next_new_nodes(node)
+		local result = {}
+		for disc_x,disc_y in iarea(get_area(node.position, 1)) do
+			local x, y = math.floor(disc_x), math.floor(disc_y)
+			if not(closed_list[string.format("{%d,%d}",x,y)] or open_list[string.format("{%d,%d}",x,y)]) then
+				local added_cost = 0
+				added_cost = added_cost + (disc_x ~= node.position.x and 1 or 0)
+				added_cost = added_cost + (disc_y ~= node.position.y and 1 or 0)
+				added_cost = (added_cost == 2 and 1.4 or added_cost)
+				table.insert(result, {position = {x=x, y=y}, surface = node.surface, cost = node.cost + added_cost})
+			end
+		end
+		return result
+	end
+
+	table.insert(open_list_data, starting_node)
+	open_list[string.format("{%d,%d}", math.floor(starting_node.position.x),math.floor(starting_node.position.y))] = true
+
+	while #open_list_data >0 do
+		local current_node = table.remove(open_list_data, 1)
+		if global.digging_pending[current_node.surface.name][string.format("{%d,%d}", math.floor(current_node.position.x), math.floor(current_node.position.y))] then
+			return current_node.position
+		else
+			for _,node in ipairs(next_new_nodes(current_node)) do
+				if node.surface.get_tile(node.position.x, node.position.y).name == cavern_Ground_name 
+				or global.digging_pending[current_node.surface.name][string.format("{%d,%d}", math.floor(node.position.x), math.floor(node.position.y))] then
+					table.insert(open_list_data, node)
+					open_list[string.format("{%d,%d}", math.floor(node.position.x),math.floor(node.position.y))] = true
+				else
+					table.insert(inactive_cells_list, node)
+				end
+			end
+			table.sort(open_list_data, function(node1, node2) return node1.cost < node2.cost end )
+		end
+		closed_list[string.format("{%d,%d}", math.floor(current_node.position.x),math.floor(current_node.position.y))] = true
+	end
+	return nil
 end

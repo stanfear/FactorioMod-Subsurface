@@ -24,12 +24,11 @@ data:extend(
     order="zzz",
     pictures =
     {
-      filename = "__base__/graphics/entity/big-electric-pole/big-electric-pole.png",
+      filename = "__Subsurface__/graphics/entities/sf_elevator_over.png",
       priority = "high",
-      width = 168,
-      height = 165,
+      width = 256,
+      height = 256,
       direction_count = 1,
-      shift = {1.6, -1.1}
     },
     connection_points =
     {
@@ -843,5 +842,117 @@ data:extend(
     circuit_wire_max_distance = 0,        
   },
 
+  {
+    type = "decorative",
+    name = "selection-marker",
+    flags = {"not-on-map"},
+    icon = "__Subsurface__/graphics/entities/selection-marker.png",
+    collision_mask = {"ghost-layer"},
+    subgroup = "grass",
+    order = "b[decorative]-b[selection-marker]",
+    collision_box = {{-0.4, -0.4}, {0.4, 0.4}},
+    selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
+    selectable_in_game = false,
+    render_layer = "selection-box",
+    pictures =
+    {
+      {
+        filename = "__Subsurface__/graphics/entities/selection-marker.png",
+        width = 32,
+        height = 32,
+        priority = "high",
+      }
+    }
+  },
+  {
+    type = "decorative",
+    name = "digging-marker",
+    flags = {},
+    icon = "__Subsurface__/graphics/entities/marked-for-digging.png",
+    collision_mask = { "ghost-layer"},
+    subgroup = "grass",
+    order = "b[decorative]-b[m2k-dbg-overlay-blue]",
+    collision_box = {{-0.4, -0.4}, {0.4, 0.4}},
+    selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
+    selectable_in_game = false,
+    render_layer = "floor",
+    pictures =
+    {
+      {
+        filename = "__Subsurface__/graphics/entities/marked-for-digging.png",
+        width = 32,
+        height = 32,
+        priority = "high",
+      }
+    }
+  },
+  {
+    type = "decorative",
+    name = "pending-digging",
+    flags = {},
+    icon = "__Subsurface__/graphics/entities/pending-digging.png",
+    collision_mask = { "ghost-layer"},
+    subgroup = "grass",
+    order = "b[decorative]-b[m2k-dbg-overlay-blue]",
+    collision_box = {{-0.4, -0.4}, {0.4, 0.4}},
+    selection_box = {{-0.5, -0.5}, {0.5, 0.5}},
+    selectable_in_game = false,
+    render_layer = "floor",
+    pictures =
+    {
+      {
+        filename = "__Subsurface__/graphics/entities/pending-digging.png",
+        width = 32,
+        height = 32,
+        priority = "high",
+      }
+    }
+  },
+
+
+
+
+  {
+    type = "assembling-machine",
+    name = "digging-robots-deployment-center",
+    icon = "__base__/graphics/icons/assembling-machine-3.png",
+    flags = {"placeable-player", "player-creation"},
+    minable = {hardness = 0.2, mining_time = 0.5, result = "digging-robots-deployment-center"},
+    max_health = 200,
+    corpse = "big-remnants",
+    dying_explosion = "massive-explosion",
+    crafting_categories = {"deploy-entity"},
+    ingredient_count = 2,
+    fixed_recipe = "deploy-digging-robots",
+    collision_box = {{-1.2, -1.2}, {1.2, 1.2}},
+    selection_box = {{-1.5, -1.5}, {1.5, 1.5}},
+    animation =
+    {
+      filename = "__base__/graphics/entity/assembling-machine-3/assembling-machine-3.png",
+      priority = "high",
+      width = 142,
+      height = 113,
+      frame_count = 32,
+      line_length = 8,
+      shift = {0.84, -0.09}
+    },
+    crafting_speed = 1,
+    energy_source =
+    {
+      type = "electric",
+      usage_priority = "secondary-input",
+      emissions = 0.05 / 1.5
+    },
+    energy_usage = "50kW",
+    open_sound = { filename = "__base__/sound/machine-open.ogg", volume = 0.85 },
+    close_sound = { filename = "__base__/sound/machine-close.ogg", volume = 0.75 },
+    vehicle_impact_sound =  { filename = "__base__/sound/car-metal-impact.ogg", volume = 0.65 },
+    working_sound =
+    {
+      sound = { filename = "__base__/sound/oil-refinery.ogg" },
+      idle_sound = { filename = "__base__/sound/idle1.ogg", volume = 0.6 },
+      apparent_volume = 2.5,
+    },
+  },
 }
 )

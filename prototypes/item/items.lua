@@ -63,4 +63,44 @@ data:extend(
     stack_size = 10
   },
 
+  {
+    type = "item",
+    name = "digging-planner",
+    icon = "__base__/graphics/icons/deconstruction-planner.png",
+    flags = {"goes-to-quickbar"},
+    subgroup = "transport",
+    order = "b[personal-transport]-a[car]",
+    place_result = "selection-marker",
+    stack_size = 1
+  },
+  {
+    type = "item",
+    name = "digging-robots-deployment-center",
+    icon = "__base__/graphics/icons/assembling-machine-1.png",
+    flags = {"goes-to-quickbar"},
+    subgroup = "production-machine",
+    order = "a[assembling-machine-1]",
+    place_result = "digging-robots-deployment-center",
+    stack_size = 50
+  },
+
+  {
+    type = "item",
+    name = "assembled-digging-robots",
+    icon = "__base__/graphics/icons/assembling-machine-1.png",
+    flags = {},
+    subgroup = "production-machine",
+    order = "a[assembling-machine-1]",
+    stack_size = 50
+  },
+
+  {
+    type = "item",
+    name = "prepared-digging-robots",
+    icon = "__base__/graphics/icons/assembling-machine-1.png",
+    flags = {"hidden"},
+    subgroup = "production-machine",
+    order = "a[assembling-machine-1]",
+    stack_size = 1
+  },
 })
