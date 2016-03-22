@@ -20,27 +20,27 @@ data:extend(
       },
       inner_corner =
       {
-        picture = "__base__/graphics/terrain/concrete/concrete-inner-corner.png",
-        count = 8
+        picture = "__Subsurface__/graphics/terrain/underground-dirt/underground-dirt-inner-corner.png",
+        count = 1
       },
       outer_corner =
       {
-        picture = "__base__/graphics/terrain/concrete/concrete-outer-corner.png",
-        count = 8
+        picture = "__Subsurface__/graphics/terrain/underground-dirt/underground-dirt-outer-corner.png",
+        count = 1
       },
       side =
       {
-        picture = "__base__/graphics/terrain/concrete/concrete-side.png",
-        count = 8
+        picture = "__Subsurface__/graphics/terrain/underground-dirt/underground-dirt-side.png",
+        count = 4
       },
       u_transition =
       {
-        picture = "__base__/graphics/terrain/concrete/concrete-u.png",
-        count = 8
+        picture = "__Subsurface__/graphics/terrain/underground-dirt/underground-dirt-u.png",
+        count = 1
       },
       o_transition =
       {
-        picture = "__base__/graphics/terrain/concrete/concrete-o.png",
+        picture = "__Subsurface__/graphics/terrain/underground-dirt/underground-dirt-o.png",
         count = 1
       }
     },
@@ -85,7 +85,7 @@ data:extend(
           picture = "__Subsurface__/graphics/terrain/cave-walls/cave-walls.png",
           count = 4,
           size = 1
-        },
+        }
       },
       inner_corner =
       {
@@ -100,7 +100,17 @@ data:extend(
       side =
       {
         picture = "__Subsurface__/graphics/terrain/cave-walls/cave-walls-side.png",
-        count = 4
+        count = 1
+      },
+      u_transition =
+      {
+        picture = "__Subsurface__/graphics/terrain/cave-walls/cave-walls-u.png",
+        count = 1
+      },
+      o_transition =
+      {
+        picture = "__Subsurface__/graphics/terrain/cave-walls/cave-walls-o.png",
+        count = 1
       }
     },
     map_color={r=0.367, g=0.234, b=0.082},

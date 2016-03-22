@@ -1038,6 +1038,17 @@ function on_pre_mined_item(event)
 	end
 end
 
+function on_player_rotated_entity(event)
+	local entity = event.entity
+	if entity.name == "fluid-elevator-mk1" then
+		if entity.direction == defines.direction.north then
+			entity.direction = defines.direction.south
+		elseif entity.direction == defines.direction.south then
+			entity.direction = defines.direction.north
+		end
+	end
+end
+
 -- when a building is built
 function on_built_entity(event)
 	local entity = event.created_entity
@@ -1122,7 +1133,6 @@ function on_built_entity(event)
 		global.onTickFunctions["pollution_moving"] = pollution_moving
 
 	elseif entity.name == "fluid-elevator-mk1" then
-		message(entity.direction)
 		local complementary_surface
 		if entity.direction >= 4 and not is_subsurface(entity.surface) then
 			message("the lower part of a fluid-elevator can only be placed in a subsurface !")
