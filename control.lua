@@ -710,7 +710,7 @@ function temp_teleportation_check(fct_name)
 			global.time_spent_dict[player_name] = nil
 			gui_element.destroy()
 
-			if #global.time_spent_dict == 0 then
+			if associative_table_count(global.time_spent_dict) == 0 then
 				global.onTickFunctions[fct_name] = nil
 			end
 		end
