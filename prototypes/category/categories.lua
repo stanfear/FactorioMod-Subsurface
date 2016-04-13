@@ -12,4 +12,9 @@ data:extend(
     type = "recipe-category",
     name = "deploy-entity"
   },
+
+  {
+    type = "ammo-category",
+    name = "digging-explosives"
+  }
 })

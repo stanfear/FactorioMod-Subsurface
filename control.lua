@@ -51,6 +51,9 @@ script.on_event(defines.events.on_player_created,  function (event) startingItem
 
 script.on_event(defines.events.on_player_rotated_entity, function(event) on_player_rotated_entity(event) end)
 
+script.on_event(defines.events.on_trigger_created_entity, function(event) on_trigger_created_entity(event) end)
+
+
 script.on_event(defines.events.on_tick, 
 	function(event) 
 		for name,fun in pairs(global.onTickFunctions) do
@@ -90,44 +93,50 @@ function debug(function_name)
 end
 
 
+
+function on_trigger_created_entity(_event)
+	local entity = _event.entity
+	if entity.name == "digging-explosion" then
+		local wall = entity.surface.find_entity(cavern_Wall_name,entity.position)
+		if not wall then entity.destroy()
+		else 
+			for _,data in ipairs(global.digging_robots_deployment_centers) do
+				if data.digging_target_wall == wall then
+					data.deployed_unit.destroy()
+					wall.die()
+				end
+			end
+		end
+	end
+end
+
+
 function digging_robots_manager(function_name)
 	for id,data in ipairs(global.digging_robots_deployment_centers) do
 		if data.deployment_center.valid then
 			if global.digging_pending[data.deployment_center.surface.name] then
-				if not(data.deployed_unit_group) then
+				if not(data.deployed_unit) then
 					if data.deployment_center.get_inventory(defines.inventory.assembling_machine_output).get_item_count("prepared-digging-robots") >= 1 then
-						local destination = find_nearest_marked_for_digging(data.deployment_center.position, data.deployment_center.surface)
-						if destination then
+						data.digging_target = find_nearest_marked_for_digging(data.deployment_center.position, data.deployment_center.surface)
+						if data.digging_target then
+							data.deployment_center.surface.create_entity{name = "selection-marker", position = data.digging_target, force=data.deployment_center.force}
 							-- deploy digger
-							local entity_name = "medium-biter"
+							local entity_name = "digging-robot"
 							local deployment_position = data.deployment_center.surface.find_non_colliding_position(entity_name, data.deployment_center.position, 5, 0.1)
-							data.deployed_unit_group = data.deployment_center.surface.create_unit_group{position = deployment_position, force = data.deployment_center.force}
-							local target_wall = data.deployment_center.surface.find_entity(cavern_Wall_name,{x = math.floor(destination.x) + 0.5, y = math.floor(destination.y) + 0.5})
+							data.digging_target_wall = data.deployment_center.surface.find_entity(cavern_Wall_name,{x = math.floor(data.digging_target.x) + 0.5, y = math.floor(data.digging_target.y) + 0.5})
 							if deployment_position then
-								local entity = data.deployment_center.surface.create_entity{
+								data.deployed_unit = data.deployment_center.surface.create_entity{
 									name=entity_name, 
 									position=deployment_position,
 									force=data.deployment_center.force}
-
 								data.deployment_center.get_inventory(defines.inventory.assembling_machine_output).remove({name="prepared-digging-robots", count=1})
-								data.deployed_unit_group.add_member(entity)
-								data.deployed_unit_group.set_command({type=defines.command.attack, target=target_wall, distraction=defines.distraction.none})
-								data.deployed_unit_group.start_moving()
-
-								entity.set_command({type=defines.command.group, group = data.deployed_unit_group, distraction=defines.distraction.none})
-
+								data.deployed_unit.set_command({type=defines.command.attack, target=data.digging_target_wall, distraction=defines.distraction.none})
 							end
 						end
 					end
 				else
-					if data.deployed_unit_group.valid then
-						local state
-						if data.deployed_unit_group.state == defines.groupstate.gathering then state = "gathering" end
-						if data.deployed_unit_group.state == defines.groupstate.moving then state = "moving" end
-						if data.deployed_unit_group.state == defines.groupstate.attacking_distraction then state = "attacking_distraction" end
-						if data.deployed_unit_group.state == defines.groupstate.attacking_target then state = "attacking_target" end
-						if data.deployed_unit_group.state == defines.groupstate.finished then state = "finished" end
-						message(state)
+					if not data.deployed_unit.valid then
+						data.deployed_unit = nil
 					end
 				end
 			end
@@ -194,8 +203,12 @@ end
 function digging_planner_check(function_name)
 	for player_index, entity in ipairs(global.selection_area_markers_per_player) do
 		local player = game.get_player(player_index)
-		if not player.cursor_stack.valid_for_read or player.cursor_stack.name ~= "digging-planner" or player.surface ~= entity.surface then 
-			global.selection_area_markers_per_player[player_index].destroy()
+		if entity.valid then
+			if not player.cursor_stack.valid_for_read or player.cursor_stack.name ~= "digging-planner" or player.surface ~= entity.surface then 
+				global.selection_area_markers_per_player[player_index].destroy()
+				global.selection_area_markers_per_player[player_index] = nil
+			end
+		else
 			global.selection_area_markers_per_player[player_index] = nil
 		end
 	end
@@ -1276,8 +1289,8 @@ function find_nearest_marked_for_digging(_position, _surface)
 			local x, y = math.floor(disc_x), math.floor(disc_y)
 			if not(closed_list[string.format("{%d,%d}",x,y)] or open_list[string.format("{%d,%d}",x,y)]) then
 				local added_cost = 0
-				added_cost = added_cost + (disc_x ~= node.position.x and 1 or 0)
-				added_cost = added_cost + (disc_y ~= node.position.y and 1 or 0)
+				if x ~= math.floor(node.position.x) then added_cost = added_cost + 1 end
+				if y ~= math.floor(node.position.y) then added_cost = added_cost + 1 end			
 				added_cost = (added_cost == 2 and 1.4 or added_cost)
 				table.insert(result, {position = {x=x, y=y}, surface = node.surface, cost = node.cost + added_cost})
 			end

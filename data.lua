@@ -2,6 +2,7 @@ require("_tools.prototypes.debug")
 
 -- entity
 require("prototypes.entity.entities")
+require("prototypes.entity.units")
 
 -- items
 require("prototypes.item.items")
