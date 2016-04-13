@@ -111,6 +111,7 @@ function on_trigger_created_entity(_event)
 end
 
 
+-- Manage when more than on deployment center is in use
 function digging_robots_manager(function_name)
 	for id,data in ipairs(global.digging_robots_deployment_centers) do
 		if data.deployment_center.valid then
