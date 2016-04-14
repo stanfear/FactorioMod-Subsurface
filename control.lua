@@ -18,6 +18,7 @@ function setup()
 	global.selection_area_markers_per_player = global.selection_area_markers_per_player or {}
 	global.marked_for_digging = global.marked_for_digging or {}
 	global.digging_pending = global.digging_pending or {}
+	global.digging_in_progress = global.digging_in_progress or {}
 	global.digging_robots_deployment_centers = global.digging_robots_deployment_centers or {}
 
 	-- move to where I create the first entrance ?
@@ -104,6 +105,7 @@ function on_trigger_created_entity(_event)
 		else 
 			for _,data in ipairs(global.digging_robots_deployment_centers) do
 				if data.digging_target_wall == wall then
+					global.digging_in_progress[entity.surface.name][string.format("{%d,%d}", math.floor(data.digging_target.x), math.floor(data.digging_target.y))] = nil
 					data.deployed_unit.destroy()
 					wall.die()
 				end
@@ -111,7 +113,6 @@ function on_trigger_created_entity(_event)
 		end
 	end
 end
-
 
 -- Manage when more than on deployment center is in use
 function digging_robots_manager(function_name)
@@ -122,6 +123,7 @@ function digging_robots_manager(function_name)
 					if data.deployment_center.get_inventory(defines.inventory.assembling_machine_output).get_item_count("prepared-digging-robots") >= 1 then
 						data.digging_target = find_nearest_marked_for_digging(data.deployment_center.position, data.deployment_center.surface)
 						if data.digging_target then
+							global.digging_in_progress[data.deployment_center.surface.name][string.format("{%d,%d}", math.floor(data.digging_target.x), math.floor(data.digging_target.y))] = true
 							data.deployment_center.surface.create_entity{name = "selection-marker", position = data.digging_target, force=data.deployment_center.force}
 							-- deploy digger
 							local entity_name = "digging-robot"
@@ -1186,6 +1188,7 @@ function on_built_entity(event)
 		entity.destroy()
 
 	elseif entity.name == "digging-robots-deployment-center" then
+		if global.digging_in_progress[entity.surface.name] == nil then global.digging_in_progress[entity.surface.name] = {} end
 		table.insert(global.digging_robots_deployment_centers, {deployment_center = entity})
 		global.onTickFunctions["digging_robots_manager"] = digging_robots_manager
 	end
@@ -1319,12 +1322,14 @@ function find_nearest_marked_for_digging(_position, _surface)
 			return current_node.position
 		else
 			for _,node in ipairs(next_new_nodes(current_node)) do
-				if node.surface.get_tile(node.position.x, node.position.y).name == cavern_Ground_name 
-				or global.digging_pending[current_node.surface.name][string.format("{%d,%d}", math.floor(node.position.x), math.floor(node.position.y))] then
-					table.insert(open_list_data, node)
-					open_list[string.format("{%d,%d}", math.floor(node.position.x),math.floor(node.position.y))] = true
-				else
-					table.insert(inactive_cells_list, node)
+				if not global.digging_in_progress[current_node.surface.name][string.format("{%d,%d}", math.floor(node.position.x), math.floor(node.position.y))] then
+					if node.surface.get_tile(node.position.x, node.position.y).name ~= "cave-walls"
+					or global.digging_pending[current_node.surface.name][string.format("{%d,%d}", math.floor(node.position.x), math.floor(node.position.y))] then
+						table.insert(open_list_data, node)
+						open_list[string.format("{%d,%d}", math.floor(node.position.x),math.floor(node.position.y))] = true
+					else
+						table.insert(inactive_cells_list, node)
+					end
 				end
 			end
 			table.sort(open_list_data, function(node1, node2) return node1.cost < node2.cost end )
