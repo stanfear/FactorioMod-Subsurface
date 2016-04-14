@@ -23,6 +23,8 @@ function setup()
 	-- move to where I create the first entrance ?
 	global.onTickFunctions["teleportation_check"] = teleportation_check
 	global.onTickFunctions["move_items"] = move_items
+	global.onTickFunctions["fluids_elevator_management"] = fluids_elevator_management -- needed to reset the method and prevent the crash
+
 
 	--global.onTickFunctions["debug"] = debug
 end
@@ -437,7 +439,7 @@ function fluids_elevator_management(function_name)
 							fluid.amount = (top_entity.fluidbox[i].amount + bottom_entity.fluidbox[i].amount)/2
 							valid = true
 						else -- if top_entity.fluidbox[i].type ~= bottom_entity.fluidbox[i].type then
-							if (not top_entity.fluidbox[i].amount < 0.5) == (bottom_entity.fluidbox[i].amount < 0.5) then --XOR
+							if (not (top_entity.fluidbox[i].amount < 0.5)) == (bottom_entity.fluidbox[i].amount < 0.5) then --XOR
 								fluid = (top_entity.fluidbox[i].amount > bottom_entity.fluidbox[i].amount) and top_entity.fluidbox[i] or bottom_entity.fluidbox[i]
 								fluid.amount = fluid.amount/2
 								valid = true
@@ -451,6 +453,9 @@ function fluids_elevator_management(function_name)
 				end
 			end
 		end
+	end
+	if associative_table_count(global.fluids_elevator) == 0 then
+		global.onTickFunctions[function_name] = nil
 	end
 end
 
