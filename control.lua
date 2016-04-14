@@ -840,7 +840,9 @@ function get_subsurface(_surface)
 		else
 			subsurface_name = "subsurface_" .. _surface.name .. "_1"
 		end
-		game.create_surface(subsurface_name)
+		if not game.surfaces[subsurface_name] then
+			game.create_surface(subsurface_name)
+		end
 		local subsurface = game.get_surface(subsurface_name)
 		global.surface_associations[_surface.name] = subsurface.name
 		return subsurface
