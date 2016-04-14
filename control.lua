@@ -569,26 +569,28 @@ end
 
 function pollution_killing_subsurface(function_name)
 	for player_name, apnea_data in pairs(global.underground_players) do
-		local modifier
-		if is_subsurface(apnea_data.player.surface) then
-			if apnea_data.player.surface.get_pollution(apnea_data.player.position) >= apnea_threshold then
-				modifier = 1
+		if apnea_data.player.connected then
+			local modifier
+			if is_subsurface(apnea_data.player.surface) then
+				if apnea_data.player.surface.get_pollution(apnea_data.player.position) >= apnea_threshold then
+					modifier = 1
+				else
+					modifier = 0
+				end
 			else
-				modifier = 0
+				modifier = -1
 			end
-		else
-			modifier = -1
-		end
-		apnea_data.gui_element.airbar.value = apnea_data.gui_element.airbar.value - (modifier/max_apnea_time)
-		apnea_data.gui_element.airbar.value = (apnea_data.gui_element.airbar.value <0) and 0 or (apnea_data.gui_element.airbar.value > 1) and 1 or apnea_data.gui_element.airbar.value
-		if apnea_data.gui_element.airbar.value >= 1 and not is_subsurface(apnea_data.player.surface) then
-			apnea_data.gui_element.destroy();
-			global.underground_players[player_name] = nil
-		elseif apnea_data.gui_element.airbar.value <= 0 and (game.tick %60) == 0 then
-			apnea_data.player.character.damage(apnea_damage, game.forces.neutral, "poison")
-			if not apnea_data.player.character then
+			apnea_data.gui_element.airbar.value = apnea_data.gui_element.airbar.value - (modifier/max_apnea_time)
+			apnea_data.gui_element.airbar.value = (apnea_data.gui_element.airbar.value <0) and 0 or (apnea_data.gui_element.airbar.value > 1) and 1 or apnea_data.gui_element.airbar.value
+			if apnea_data.gui_element.airbar.value >= 1 and not is_subsurface(apnea_data.player.surface) then
 				apnea_data.gui_element.destroy();
 				global.underground_players[player_name] = nil
+			elseif apnea_data.gui_element.airbar.value <= 0 and (game.tick %60) == 0 then
+				apnea_data.player.character.damage(apnea_damage, game.forces.neutral, "poison")
+				if not apnea_data.player.character then
+					apnea_data.gui_element.destroy();
+					global.underground_players[player_name] = nil
+				end
 			end
 		end
 	end
