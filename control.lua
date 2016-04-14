@@ -1153,7 +1153,9 @@ function on_built_entity(event)
 	elseif entity.name == "fluid-elevator-mk1" then
 		local complementary_surface
 		if entity.direction >= 4 and not is_subsurface(entity.surface) then
-			message("the lower part of a fluid-elevator can only be placed in a subsurface !")
+			if event.player_index then
+				game.get_player(player_index).print("the lower part of a fluid-elevator can only be placed in a subsurface !")
+			end
 			entity.direction = (entity.direction + 4) % 8
 			complementary_surface = get_subsurface(entity.surface)
 		elseif entity.direction >= 4 and is_subsurface(entity.surface) then
