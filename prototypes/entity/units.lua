@@ -197,7 +197,8 @@ data:extend(
         width = 64,
         height = 59,
         frame_count = 16,
-        animation_speed = 0.5
+        animation_speed = 0.5,
+        shift = {0, 1},
       }
     },
     light = {intensity = 1, size = 3},

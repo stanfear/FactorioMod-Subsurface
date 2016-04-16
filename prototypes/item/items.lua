@@ -44,7 +44,7 @@ data:extend(
   {
     type = "item",
     name = "fluid-elevator-mk1",
-    icon = "__base__/graphics/icons/car.png",
+    icon = "__Subsurface__/graphics/icons/fluid_elevator_mk1_icon.png",
     flags = {"goes-to-quickbar"},
     subgroup = "transport",
     order = "b[personal-transport]-a[car]",

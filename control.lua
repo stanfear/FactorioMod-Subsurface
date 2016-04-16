@@ -602,7 +602,7 @@ function pollution_killing_subsurface(function_name)
 		end
 	end
 	if associative_table_count(global.underground_players) == 0 then
-		global.onTickFunctions["pollution_killing_subsurface"] = nil
+		global.onTickFunctions[function_name] = nil
 	end
 end
 
@@ -1161,7 +1161,7 @@ function on_built_entity(event)
 		local complementary_surface
 		if entity.direction >= 4 and not is_subsurface(entity.surface) then
 			if event.player_index then
-				game.get_player(player_index).print("the lower part of a fluid-elevator can only be placed in a subsurface !")
+				game.get_player(event.player_index).print("the lower part of a fluid-elevator can only be placed in a subsurface !")
 			end
 			entity.direction = (entity.direction + 4) % 8
 			complementary_surface = get_subsurface(entity.surface)
