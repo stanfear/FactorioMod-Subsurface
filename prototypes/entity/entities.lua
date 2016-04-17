@@ -24,7 +24,7 @@ data:extend(
     order="zzz",
     pictures =
     {
-      filename = "__Subsurface__/graphics/entities/sf_elevator_over.png",
+      filename = "__base__/graphics/entity/big-electric-pole/big-electric-pole.png",
       priority = "high",
       width = 256,
       height = 256,
