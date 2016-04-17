@@ -55,7 +55,7 @@ data:extend(
   {
     type = "item",
     name = "independant-item-elevator",
-    icon = "__base__/graphics/icons/car.png",
+    icon = "__Subsurface__/graphics/icons/items-elevator-icon.png",
     flags = {"goes-to-quickbar"},
     subgroup = "transport",
     order = "b[personal-transport]-a[car]",
