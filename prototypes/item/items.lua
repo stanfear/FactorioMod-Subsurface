@@ -66,10 +66,10 @@ data:extend(
   {
     type = "item",
     name = "digging-planner",
-    icon = "__base__/graphics/icons/deconstruction-planner.png",
+    icon = "__Subsurface__/graphics/icons/digging-planner-icon.png",
     flags = {"goes-to-quickbar"},
-    subgroup = "transport",
-    order = "b[personal-transport]-a[car]",
+    subgroup = "tool",
+    order = "c[automated-construction]-c[digging-planner]",
     place_result = "selection-marker",
     stack_size = 1
   },
