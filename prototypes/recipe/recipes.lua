@@ -90,7 +90,7 @@ data:extend(
   {
     type = "recipe",
     name = "digging-robots-deployment-center",
-    enabled = true,
+    enabled = false,
     ingredients =
     {
       {"iron-plate", 2},
@@ -101,7 +101,7 @@ data:extend(
   {
     type = "recipe",
     name = "assemble-digging-robots",
-    enabled = true,
+    enabled = false,
     ingredients =
     {
       {"iron-plate", 2},
@@ -120,6 +120,17 @@ data:extend(
       {"assembled-digging-robots", 1},
     },
     result = "prepared-digging-robots"
+  },
+
+  {
+    type = "recipe",
+    name = "digging-planner",
+    enabled = false,
+    ingredients =
+    {
+      {"iron-plate", 2}
+    },
+    result = "digging-planner"
   },
 
 

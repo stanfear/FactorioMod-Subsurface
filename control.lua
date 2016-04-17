@@ -372,8 +372,7 @@ function get_complementary_surface(_entity)
 			complementary_surface = get_oversurface(_entity.surface)
 		end
 	else
-		message(string.find(_entity.name, "independant-item-elevator") and "yes" or "nop")
-		message("[[Subsurface] get_complementary_surface] error, entity not known : " .. _entity.name)
+		error("[[Subsurface] get_complementary_surface] error, entity not known : " .. _entity.name)
 		return nil
 	end
 
@@ -407,7 +406,7 @@ function place_complementary_entity(_entity)
 		complementary_entity.direction = _entity.direction
 
 	else
-		message("error, entity not known")
+		error("[place_complementary_entity] error, entity not known " .. _entity.name)
 		return nil
 	end
 	return complementary_entity
@@ -1107,7 +1106,9 @@ function on_built_entity(event)
 
 		local complementary_surface
 		if direction >= 4 and not is_subsurface(entity.surface) then
-			message("the lower part of an elevator can only be placed in a subsurface !")
+			if event.player_index then
+				game.get_player(event.player_index).print("the lower part of a elevator can only be placed in a subsurface ! (the change has been made for you, but try to not do it again !)")
+			end
 			direction = (direction + 4) % 8
 			complementary_surface = get_subsurface(entity.surface)
 		elseif entity.direction >= 4 and is_subsurface(entity.surface) then
@@ -1161,7 +1162,7 @@ function on_built_entity(event)
 		local complementary_surface
 		if entity.direction >= 4 and not is_subsurface(entity.surface) then
 			if event.player_index then
-				game.get_player(event.player_index).print("the lower part of a fluid-elevator can only be placed in a subsurface !")
+				game.get_player(event.player_index).print("the lower part of a fluid-elevator can only be placed in a subsurface ! (the change has been made for you, but try to not do it again !)")
 			end
 			entity.direction = (entity.direction + 4) % 8
 			complementary_surface = get_subsurface(entity.surface)
@@ -1281,6 +1282,7 @@ end
 
 
 function startingItems(player)
+	--[[
   player.insert{name="iron-plate", count=100}
   player.insert{name="solar-panel", count=50}
   player.insert{name="substation", count=50}
@@ -1288,6 +1290,7 @@ function startingItems(player)
   player.insert{name="digging-planner", count=1}
 
   player.force.research_all_technologies()
+  ]]
 end
 
 
@@ -1340,3 +1343,15 @@ function find_nearest_marked_for_digging(_position, _surface)
 	end
 	return nil
 end
+
+
+
+remote.add_interface("subsurface", {
+	activate_automated_boring = function() 
+		game.forces.player.recipes["digging-robots-deployment-center"].enabled = true
+		game.forces.player.recipes["assemble-digging-robots"].enabled = true
+		game.forces.player.recipes["digging-planner"].enabled = true
+	end
+	})
+
+-- /c remote.call("subsurface", "activate_automated_boring")
