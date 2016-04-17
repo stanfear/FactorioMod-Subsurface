@@ -15,8 +15,8 @@ data:extend(
     name = "air-vent",
     icon = "__Subsurface__/graphics/icons/air_vent_11_icon.png",
     flags = {"goes-to-quickbar"},
-    subgroup = "production-machine",
-    order = "a[air-vent-1]",
+    subgroup = "inter-surface-transport",
+    order = "a[air-vent-passive]",
     place_result = "air-vent",
     stack_size = 50
   }, 
@@ -25,8 +25,8 @@ data:extend(
     name = "active-air-vent",
     icon = "__Subsurface__/graphics/icons/air_vent_22_icon.png",
     flags = {"goes-to-quickbar"},
-    subgroup = "production-machine",
-    order = "a[air-vent-2]",
+    subgroup = "inter-surface-transport",
+    order = "b[air-vent-active]",
     place_result = "active-air-vent",
     stack_size = 50
   },
@@ -46,8 +46,8 @@ data:extend(
     name = "fluid-elevator-mk1",
     icon = "__Subsurface__/graphics/icons/fluid_elevator_mk1_icon.png",
     flags = {"goes-to-quickbar"},
-    subgroup = "transport",
-    order = "b[personal-transport]-a[car]",
+    subgroup = "inter-surface-transport",
+    order = "d[fluid]-a[fluid-elevator-mk1]",
     place_result = "fluid-elevator-mk1",
     stack_size = 10
   },
@@ -57,8 +57,8 @@ data:extend(
     name = "independant-item-elevator",
     icon = "__Subsurface__/graphics/icons/items-elevator-icon.png",
     flags = {"goes-to-quickbar"},
-    subgroup = "transport",
-    order = "b[personal-transport]-a[car]",
+    subgroup = "inter-surface-transport",
+    order = "c[transport-belt]-c[items-elevator-mk1]",
     place_result = "independant-item-elevator-placer",
     stack_size = 10
   },
