@@ -6,6 +6,7 @@ require("prototypes.entity.units")
 
 -- items
 require("prototypes.item.items")
+require("prototypes.item.items-groups")
 
 -- recipies
 require("prototypes.recipe.recipes")
