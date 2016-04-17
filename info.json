@@ -1,6 +1,6 @@
 {
   "name": "Subsurface",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "title": "Subsurface - build beneath your base !",
   "author": "StanFear",
   "dependencies": ["base >= 0.12.21"],
