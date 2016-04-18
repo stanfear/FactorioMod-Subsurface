@@ -547,7 +547,14 @@ data:extend(
     {
       base_area = 10,
       base_level = -1,
-      pipe_connections = {{ position = {  0,  2} },{ position = {  0, -2} },{ position = {  2,  0} },{ position = { -2,  0} },},
+      pipe_covers = pipecoverspictures(),
+      pipe_connections =
+      {
+        { position = {-1, -2} },
+        { position = {2, 1} },
+        { position = {1, 2} },
+        { position = {-2, -1} },
+      },
     },
     window_bounding_box = {{-0.125, 0.6875}, {0.1875, 1.1875}},
     pictures =
