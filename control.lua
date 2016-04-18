@@ -117,12 +117,15 @@ end
 -- Manage when more than on deployment center is in use
 function digging_robots_manager(function_name)
 	for id,data in ipairs(global.digging_robots_deployment_centers) do
+		if (game.tick + id) % #global.digging_robots_deployment_centers then
+
 		if data.deployment_center.valid then
 			if global.digging_pending[data.deployment_center.surface.name] then
 				if not(data.deployed_unit) then
 					if data.deployment_center.get_inventory(defines.inventory.assembling_machine_output).get_item_count("prepared-digging-robots") >= 1 then
-						data.digging_target = find_nearest_marked_for_digging(data.deployment_center.position, data.deployment_center.surface)
-						if data.digging_target then
+						data.search_result_data = find_nearest_marked_for_digging(data.deployment_center.position, data.deployment_center.surface, data.search_result_data)
+						if data.search_result_data and data.search_result_data.finished then
+							data.digging_target = data.search_result_data.position
 							global.digging_in_progress[data.deployment_center.surface.name][string.format("{%d,%d}", math.floor(data.digging_target.x), math.floor(data.digging_target.y))] = true
 							data.deployment_center.surface.create_entity{name = "selection-marker", position = data.digging_target, force=data.deployment_center.force}
 							-- deploy digger
@@ -148,6 +151,8 @@ function digging_robots_manager(function_name)
 
 		else
 			table.remove(global.digging_robots_deployment_centers, id)
+		end
+
 		end
 	end
 	if #global.digging_robots_deployment_centers == 0 then
@@ -1295,19 +1300,22 @@ end
 
 
 -- A* inspired algorithme to find the closest digging pending position
-function find_nearest_marked_for_digging(_position, _surface)
+function find_nearest_marked_for_digging(_position, _surface, _data)
+	_data = _data or {}
 
 	local starting_node = {position = _position, surface = _surface, cost = 0}
-	local open_list = {}
-	local closed_list = {}
-	local open_list_data = {}
-	local inactive_cells_list = {}
+	_data.open_list = _data.open_list or {}
+	_data.closed_list = _data.closed_list or {}
+	_data.open_list_data = _data.open_list_data or {}
+	_data.inactive_cells_list = _data.inactive_cells_list or {}
+
+	_data.finished = false
 
 	function next_new_nodes(node)
 		local result = {}
 		for disc_x,disc_y in iarea(get_area(node.position, 1)) do
 			local x, y = math.floor(disc_x), math.floor(disc_y)
-			if not(closed_list[string.format("{%d,%d}",x,y)] or open_list[string.format("{%d,%d}",x,y)]) then
+			if not(_data.closed_list[string.format("{%d,%d}",x,y)] or _data.open_list[string.format("{%d,%d}",x,y)]) then
 				local added_cost = 0
 				if x ~= math.floor(node.position.x) then added_cost = added_cost + 1 end
 				if y ~= math.floor(node.position.y) then added_cost = added_cost + 1 end			
@@ -1318,28 +1326,37 @@ function find_nearest_marked_for_digging(_position, _surface)
 		return result
 	end
 
-	table.insert(open_list_data, starting_node)
-	open_list[string.format("{%d,%d}", math.floor(starting_node.position.x),math.floor(starting_node.position.y))] = true
+	table.insert(_data.open_list_data, starting_node)
+	_data.open_list[string.format("{%d,%d}", math.floor(starting_node.position.x),math.floor(starting_node.position.y))] = true
 
-	while #open_list_data >0 do
-		local current_node = table.remove(open_list_data, 1)
-		if global.digging_pending[current_node.surface.name][string.format("{%d,%d}", math.floor(current_node.position.x), math.floor(current_node.position.y))] then
-			return current_node.position
+	local count = 0
+
+
+	while #_data.open_list_data > 0 and count < 10 do
+		count = count + 1
+		local current_node = table.remove(_data.open_list_data, 1)
+
+		if global.digging_pending[current_node.surface.name][string.format("{%d,%d}", math.floor(current_node.position.x), math.floor(current_node.position.y))] 
+		and not global.digging_in_progress[current_node.surface.name][string.format("{%d,%d}", math.floor(current_node.position.x), math.floor(current_node.position.y))] then
+			return {finished = true, position = current_node.position}
 		else
 			for _,node in ipairs(next_new_nodes(current_node)) do
 				if not global.digging_in_progress[current_node.surface.name][string.format("{%d,%d}", math.floor(node.position.x), math.floor(node.position.y))] then
 					if node.surface.get_tile(node.position.x, node.position.y).name ~= "cave-walls"
 					or global.digging_pending[current_node.surface.name][string.format("{%d,%d}", math.floor(node.position.x), math.floor(node.position.y))] then
-						table.insert(open_list_data, node)
-						open_list[string.format("{%d,%d}", math.floor(node.position.x),math.floor(node.position.y))] = true
+						table.insert(_data.open_list_data, node)
+						_data.open_list[string.format("{%d,%d}", math.floor(node.position.x),math.floor(node.position.y))] = true
 					else
-						table.insert(inactive_cells_list, node)
+						table.insert(_data.inactive_cells_list, node)
 					end
 				end
 			end
-			table.sort(open_list_data, function(node1, node2) return node1.cost < node2.cost end )
+			table.sort(_data.open_list_data, function(node1, node2) return node1.cost < node2.cost end )
 		end
-		closed_list[string.format("{%d,%d}", math.floor(current_node.position.x),math.floor(current_node.position.y))] = true
+		_data.closed_list[string.format("{%d,%d}", math.floor(current_node.position.x),math.floor(current_node.position.y))] = true
+	end
+	if count == 10 then -- the search didn't finish
+		return _data
 	end
 	return nil
 end
