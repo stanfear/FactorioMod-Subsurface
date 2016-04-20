@@ -1336,6 +1336,16 @@ function find_nearest_marked_for_digging(_position, _surface, _data)
 		count = count + 1
 		local current_node = table.remove(_data.open_list_data, 1)
 
+--[[
+		local str = string.format("%g", current_node.cost)
+		for i = 0, string.len(str) do
+		    char = string.sub(str,i,i)
+		    if (string.byte(char) ~= nil) then
+		          offsetY = 0.2
+		          offsetX = i * 0.2
+		          current_node.surface.create_entity{name = "ascii" .. string.byte(char), position =  {current_node.position.x + offsetX, current_node.position.y + offsetY}}
+		    end
+		end]]
 		if global.digging_pending[current_node.surface.name][string.format("{%d,%d}", math.floor(current_node.position.x), math.floor(current_node.position.y))] 
 		and not global.digging_in_progress[current_node.surface.name][string.format("{%d,%d}", math.floor(current_node.position.x), math.floor(current_node.position.y))] then
 			return {finished = true, position = current_node.position}
