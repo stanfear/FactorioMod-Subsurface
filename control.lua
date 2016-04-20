@@ -3,7 +3,15 @@ require "defines"
 require "lib"
 require "config"
 
+require "events_manager"
 function setup()
+	global.events_manager = global.events_manager or events_manager:new()
+	
+	events_manager:setup()
+	global.data = ontick:new()
+	ontick:init()
+	global.data:start()
+
 	global.onTickFunctions = global.onTickFunctions or {}
 	global.elevator_association = global.elevator_association or {}
 	global.item_elevator = global.item_elevator or {}
@@ -29,6 +37,33 @@ function setup()
 
 	--global.onTickFunctions["debug"] = debug
 end
+
+
+
+
+ontick = {data = "data"}
+function ontick:new(o)
+	o = o or {}   -- create object if user does not provide one
+	self.__index = self
+	setmetatable(o, self)
+	return o
+end
+
+function ontick:init()
+	self.__index = self
+	setmetatable(global.data, self)
+end
+
+function ontick:on_tick(_event)
+	game.player.print(game.tick)
+end
+
+function ontick:start()
+	global.events_manager:add_listener(defines.events.on_tick, self)
+end
+
+
+
 script.on_init(setup)
 script.on_load(setup)
 script.on_configuration_changed(setup)
