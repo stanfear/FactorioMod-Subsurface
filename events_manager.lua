@@ -4,11 +4,11 @@ function events_manager:new(o)
 	if global._events_manager then
 		warning("An event manager has already been generated. Generating a new one will render the previous useless (unless you use reload_events() again - Only one manager can be used at a time).\nPrevious event_manager generated in:\n" .. global._events_manager.meta_data.previous_traceback .. "\n\nNew event_manager generated in:\n" .. debug.traceback(nil, 2))
 	end
-	global._events_manager = {}
-	global._events_manager.meta_data = {}
+	global._events_manager = global._events_manager or {}
+	global._events_manager.meta_data = global._events_manager.meta_data or {}
 	global._events_manager.meta_data.previous_traceback = debug.traceback(nil, 2)
 
-	global._events_manager.managers = {}
+	global._events_manager.managers = global._events_manager.managers or {}
 	o = o or {} -- create object if user does not provide one
 	self.__index = self
 	setmetatable(o, self)
@@ -79,7 +79,7 @@ end
 
 
 function events_manager:add_function(_event_id, _function_id, _function)
-	if not self.names[_event_id] then self:init() end -- if an event is not recorded, reload them all
+	if not self.names[_event_id] then self:reload_events() end -- if an event is not recorded, reload them all
 	-- if after reloading the event is still not recorded
 	if not self.names[_event_id] then error("the event must be registered in the defines.events table. If you created the event yourself, please use 'defines.events.<event_name> = generate_event_name()'", 2) end
 	local event_name = self.names[_event_id]
