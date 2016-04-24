@@ -3,14 +3,23 @@ require "defines"
 require "lib"
 require "config"
 
+-- require classes
 require "events_manager"
+require "custom_surface"
+
 function setup()
-	global.events_manager = global.events_manager or events_manager:new()
-	
+	-- init classes
 	events_manager:setup()
+	custom_surface:setup()
+
+
+
+	global.events_manager = global.events_manager or events_manager:new()
 	global.data = ontick:new()
-	ontick:init()
 	global.data:start()
+
+
+	ontick:init()
 
 	global.onTickFunctions = global.onTickFunctions or {}
 	global.elevator_association = global.elevator_association or {}
@@ -55,7 +64,8 @@ function ontick:init()
 end
 
 function ontick:on_tick(_event)
-	game.player.print(game.tick)
+	game.player.print(self.data)
+	self.data = "on_tick - #" .. game.tick
 end
 
 function ontick:start()
@@ -103,7 +113,7 @@ script.on_event(defines.events.on_tick,
 
 
 
-function debug(function_name)
+--[[function debug(function_name)
 	local gpp = game.player.print
 
 	local surface = get_subsurface(game.player.surface)
@@ -129,7 +139,7 @@ function debug(function_name)
 	
 	return true
 end
-
+]]
 
 
 function on_trigger_created_entity(_event)
