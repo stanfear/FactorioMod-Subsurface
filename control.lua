@@ -289,28 +289,28 @@ function add_association_data(_entity, _complementary_entity)
 					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
 					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
 				elseif _entity.direction == defines.direction.east then
-					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
-					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
+					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
+					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
 				elseif _entity.direction == defines.direction.south then
 					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
 					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
 				elseif _entity.direction == defines.direction.west then
-					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
-					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
+					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
+					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
 				end
 			else -- if string.find(_entity.name, "lowerside")
 				if _entity.direction == defines.direction.north then
 					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
 					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
 				elseif _entity.direction == defines.direction.east then
-					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
-					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
+					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
+					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
 				elseif _entity.direction == defines.direction.south then
 					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
 					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
 				elseif _entity.direction == defines.direction.west then
-					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
-					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
+					output_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x - 0.5, y = _entity.position.y + 0.5}, force=_entity.force}
+					input_item_elevator = _entity.surface.create_entity{name = "fast-transport-belt", position = {x = _entity.position.x + 0.5, y = _entity.position.y - 0.5}, force=_entity.force}
 				end
 			end
 			input_item_elevator.destructible = false
