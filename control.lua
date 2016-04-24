@@ -622,11 +622,7 @@ function move_items(function_name)
 				lane_input = elevator.input.get_transport_line(laneI)
 				lane_output = elevator.output.get_transport_line(laneI)
 				if lane_input.get_item_count() > 0 and lane_output.can_insert_at_back() then
-					local item_to_move = {name = "", count = 1}
-					for name, count in pairs(lane_input.get_contents()) do
-						item_to_move.name = name
-						break
-					end
+					local item_to_move = {name = next(lane_input.get_contents()), count = 1}
 					lane_input.remove_item(item_to_move)
 					lane_output.insert_at_back(item_to_move)
 				end
