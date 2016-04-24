@@ -3,6 +3,7 @@ custom_surface = {luaSurface = nil, custom_name = nil, oversurface = nil, subsur
 function custom_surface:new(o)
 	global._custom_surface = global._custom_surface or {}
 	global._custom_surface.custom_surfaces = global._custom_surface.custom_surfaces or {}
+	global._custom_surface.meta_data = global._custom_surface.meta_data or {}
 
 	if o.create_surface then
 		if o.luasurface_name then
@@ -34,6 +35,16 @@ function custom_surface:new(o)
 	self.__index = self
 	setmetatable(o, self)
 	global._custom_surface.custom_surfaces[o.luaSurface.name] = o
+
+	if not global._custom_surface.meta_data.statics_events_registered then
+		global.events_manager:add_listener(defines.events.on_preplayer_mined_item ,custom_surface)
+		global.events_manager:add_listener(defines.events.on_entity_died ,custom_surface)
+		global.events_manager:add_listener(defines.events.on_robot_pre_mined ,custom_surface)
+		global._custom_surface.meta_data.statics_events_registered = true
+	end
+
+	global.events_manager:add_listener(defines.events.on_chunk_generated ,o)
+
 	return o
 end
 
@@ -46,7 +57,7 @@ function custom_surface:setup()
 	end
 end
 
-function custom_surface:get_custom_surface(arg)
+function custom_surface:get_custom_surface(arg) -- static function
 	if arg.name then
 		if global._custom_surface.custom_surfaces[arg.name] then
 			return global._custom_surface.custom_surfaces[arg.name]
@@ -95,7 +106,7 @@ function custom_surface:set_subsurface(_subsurface)
 	repeat
 		if test_surface.oversurface == _subsurface then error("you think you're funny ? you cannot set a surface that is above another to be the subsurface of that other ...\nsurface name: " .. self.luaSurface.name .. " (custom name: ".. self.custom_name ..")\nsubsurface name: " .. self.subsurface.luaSurface.name .. " (custom name: ".. self.subsurface.custom_name ..")",2) end
 		test_surface = test_surface.oversurface
-	until test_surface = nil
+	until test_surface == nil
 
 	-- all seems to be good
 	self.subsurface = _subsurface
@@ -114,7 +125,7 @@ function custom_surface:is_area_free(_area)
 end
 
 function custom_surface:request_gen_area(_area)
-	if self:is_subsurface()
+	if self:is_subsurface() then
 		_area = expand_area(_area, 1)
 	end
 	chunk_area = {left_top = to_chunk_position(_area.left_top), right_bottom = to_chunk_position(_area.right_bottom)}
@@ -137,57 +148,90 @@ function custom_surface:clear_area(_clearing_area, _digging_area)
 	end
 	if self.subsurface_gen and _digging_area then
 
-	local walls_destroyed = 0
-	for x, y in iarea(_digging_area) do
-		if self.luaSurface.get_tile(x, y).name ~= cavern_Ground_name then
-			table.insert(new_tiles, {name = cavern_Ground_name, position = {x, y}})
-		end
-
---TODO : change the folowing code once the class handling orders has been done
-		if global.marked_for_digging[string.format("%s&@{%d,%d}", self.luaSurface.name, math.floor(x), math.floor(y))] then -- remove the mark
-			if global.marked_for_digging[string.format("%s&@{%d,%d}", self.luaSurface.name, math.floor(x), math.floor(y))].valid then
-				global.marked_for_digging[string.format("%s&@{%d,%d}", self.luaSurface.name, math.floor(x), math.floor(y))].destroy()
+		local walls_destroyed = 0
+		for x, y in iarea(_digging_area) do
+			if self.luaSurface.get_tile(x, y).name ~= cavern_Ground_name then
+				table.insert(new_tiles, {name = cavern_Ground_name, position = {x, y}})
 			end
-			global.marked_for_digging[string.format("%s&@{%d,%d}", self.luaSurface.name, math.floor(x), math.floor(y))] = nil
-		end
-		if global.digging_pending[self.luaSurface.name] and global.digging_pending[self.luaSurface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))] then -- remove the digging pending entity
-			if global.digging_pending[self.luaSurface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))].valid then
-				global.digging_pending[self.luaSurface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))].destroy()
-			end
-			global.digging_pending[self.luaSurface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))] = nil
-		end
 
-		local wall = self.luaSurface.find_entity(cavern_Wall_name, {x = x, y = y})
-		if wall then 
-			wall.destroy()
-			walls_destroyed = walls_destroyed + 1
-		else
-		end
-	end
-	local to_add = {}
-	for x, y in iouter_area_border(_digging_area) do
-		if self.luaSurface.get_tile(x, y).name == "out-of-map" then
-			table.insert(new_tiles, {name = "cave-walls", position = {x, y}})
-			self.luaSurface.create_entity{name = cavern_Wall_name, position = {x, y}, force=game.forces.neutral}
-			if global.marked_for_digging[string.format("%s&@{%d,%d}", self.luaSurface.name, math.floor(x), math.floor(y))] then -- manage the marked for digging cells
-				if global.digging_pending[self.luaSurface.name] == nil then global.digging_pending[self.luaSurface.name] = {} end
-				if global.digging_pending[self.luaSurface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))] == nil then 
-					table.insert(to_add, {surface = self.luaSurface,x = x, y = y})
-				end
-				if global.marked_for_digging[string.format("%s&@{%d,%d}", self.luaSurface.name, math.floor(x), math.floor(y))].valid then	
+	--TODO : change the folowing code once the class handling orders has been done
+			if global.marked_for_digging[string.format("%s&@{%d,%d}", self.luaSurface.name, math.floor(x), math.floor(y))] then -- remove the mark
+				if global.marked_for_digging[string.format("%s&@{%d,%d}", self.luaSurface.name, math.floor(x), math.floor(y))].valid then
 					global.marked_for_digging[string.format("%s&@{%d,%d}", self.luaSurface.name, math.floor(x), math.floor(y))].destroy()
 				end
 				global.marked_for_digging[string.format("%s&@{%d,%d}", self.luaSurface.name, math.floor(x), math.floor(y))] = nil
 			end
-		end
-	end
-	self.luaSurface.set_tiles(new_tiles)
+			if global.digging_pending[self.luaSurface.name] and global.digging_pending[self.luaSurface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))] then -- remove the digging pending entity
+				if global.digging_pending[self.luaSurface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))].valid then
+					global.digging_pending[self.luaSurface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))].destroy()
+				end
+				global.digging_pending[self.luaSurface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))] = nil
+			end
 
-	-- done after because set_tiles remove decorations
-	for _,data in ipairs(to_add) do
-		local pending_entity = data.surface.create_entity{name = "pending-digging", position = {x = data.x, y = data.y}, force=game.forces.neutral}
-		global.digging_pending[data.surface.name][string.format("{%d,%d}", math.floor(data.x), math.floor(data.y))] = pending_entity
+			local wall = self.luaSurface.find_entity(cavern_Wall_name, {x = x, y = y})
+			if wall then 
+				wall.destroy()
+				walls_destroyed = walls_destroyed + 1
+			else
+			end
+		end
+		local to_add = {}
+		for x, y in iouter_area_border(_digging_area) do
+			if self.luaSurface.get_tile(x, y).name == "out-of-map" then
+				table.insert(new_tiles, {name = "cave-walls", position = {x, y}})
+				self.luaSurface.create_entity{name = cavern_Wall_name, position = {x, y}, force=game.forces.neutral}
+				if global.marked_for_digging[string.format("%s&@{%d,%d}", self.luaSurface.name, math.floor(x), math.floor(y))] then -- manage the marked for digging cells
+					if global.digging_pending[self.luaSurface.name] == nil then global.digging_pending[self.luaSurface.name] = {} end
+					if global.digging_pending[self.luaSurface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))] == nil then 
+						table.insert(to_add, {surface = self.luaSurface,x = x, y = y})
+					end
+					if global.marked_for_digging[string.format("%s&@{%d,%d}", self.luaSurface.name, math.floor(x), math.floor(y))].valid then	
+						global.marked_for_digging[string.format("%s&@{%d,%d}", self.luaSurface.name, math.floor(x), math.floor(y))].destroy()
+					end
+					global.marked_for_digging[string.format("%s&@{%d,%d}", self.luaSurface.name, math.floor(x), math.floor(y))] = nil
+				end
+			end
+		end
+		self.luaSurface.set_tiles(new_tiles)
+
+		-- done after because set_tiles remove decorations
+		for _,data in ipairs(to_add) do
+			local pending_entity = data.surface.create_entity{name = "pending-digging", position = {x = data.x, y = data.y}, force=game.forces.neutral}
+			global.digging_pending[data.surface.name][string.format("{%d,%d}", math.floor(data.x), math.floor(data.y))] = pending_entity
+		end
 	end
 
 	return {player_found = player_found, walls_destroyed = walls_destroyed}
 end
+
+
+
+function custom_surface:on_preplayer_mined_item(event) -- static
+	self:on_entity_removed(event)
+end
+function custom_surface:on_entity_died(event) -- static
+	self:on_entity_removed(event)
+end
+function custom_surface:on_robot_pre_mined(event) -- static
+	self:on_entity_removed(event)
+end
+
+
+function custom_surface:on_entity_removed(event) -- static
+	if event.entity.name == cavern_Wall_name then
+		local c_surface = get_custom_surface{name=event.entity.surface.name}
+		c_surface:clear_area(nil, {left_top = event.entity.position, right_bottom = event.entity.position})
+	end
+end
+
+function custom_surface:on_chunk_generated(event)
+	if event.surface.name == self.luasurface.name then
+		if not self.subsurface_gen then return end
+		local newTiles = {}
+		for x, y in iarea(area) do
+			table.insert(newTiles, {name = "out-of-map", position = {x, y}})
+		end
+		surface.set_tiles(newTiles)
+	end
+end
+
