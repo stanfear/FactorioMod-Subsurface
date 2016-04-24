@@ -26,9 +26,10 @@ data:extend(
     {
       filename = "__base__/graphics/entity/big-electric-pole/big-electric-pole.png",
       priority = "high",
-      width = 256,
-      height = 256,
+      width = 168,
+      height = 165,
       direction_count = 1,
+      shift = {1.6, -1.1}
     },
     connection_points =
     {
