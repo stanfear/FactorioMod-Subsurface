@@ -95,7 +95,7 @@ end
 function events_manager:add_function(_event_id, _function_id, _function)
 	if not self.names[_event_id] then self:reload_events() end -- if an event is not recorded, reload them all
 	-- if after reloading the event is still not recorded
-	if not self.names[_event_id] then error("the event must be registered in the defines.events table. If you created the event yourself, please use 'defines.events.<event_name> = generate_event_name()'", 2) end
+	if not self.names[_event_id] then error("the event must be registered in the defines.events table. If you created the event yourself, please use 'defines.events.<event_name> = generate_event_name()'", 2) end -- TODO : check if this would actually work !
 	local event_name = self.names[_event_id]
 	
 	if type(_event_id) ~= "number" then error("invalid event id: '" .. _event_id.. "'", 2) end
