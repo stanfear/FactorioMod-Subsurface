@@ -30,21 +30,7 @@ data:extend(
     },
     result = "active-air-vent"
   },
-
   {
-    type = "recipe",
-    name = "drilling",
-    enabled = true,
-    hidden = true,
-    category = "digging",
-    energy_required = 10,
-    ingredients = {},
-    results=
-    {
-      {type="item", name="stone", amount=50}
-    }
-  },
-{
     type = "recipe",
     name = "mobile-borer",
     enabled = true,

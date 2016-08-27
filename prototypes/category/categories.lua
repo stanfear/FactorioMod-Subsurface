@@ -16,5 +16,21 @@ data:extend(
   {
     type = "ammo-category",
     name = "digging-explosives"
-  }
+  },
+
+
+  { 
+    type = "item-group",
+    name = "digging",
+    icon = "__Subsurface__/graphics/icons/Digging_icon.png",
+    inventory_order = "s",
+    order = "sb-c"
+  },
+
+  { 
+    type = "item-subgroup",
+    group = "digging",
+    order = "dd",
+    name = "digg-down", 
+  },
 })

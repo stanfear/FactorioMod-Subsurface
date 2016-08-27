@@ -8,8 +8,9 @@ require("prototypes.entity.units")
 require("prototypes.item.items")
 require("prototypes.item.items-groups")
 
--- recipies
+-- recipes
 require("prototypes.recipe.recipes")
+require("prototypes.recipe.digging_recipes")
 
 -- tech
 require("prototypes.tech.tech")
