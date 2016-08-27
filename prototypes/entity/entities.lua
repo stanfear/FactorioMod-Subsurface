@@ -199,6 +199,32 @@ data:extend(
     energy_usage = "50kW",
   },
 
+
+
+  {
+    type = "simple-entity",
+    name = "drilling-work-area",
+    flags = {"placeable-neutral", "not-on-map"},
+    collision_mask = { "item-layer", "object-layer", "player-layer", "water-tile"},
+    icon = "__Subsurface__/graphics/icons/air_vent_11_icon.png",
+    minable = {mining_time = 1, result = "air-vent"},
+    selection_box = {{-1.5, -1.5}, {1.5, 1.5}},
+    collision_box = {{-1.3, -1.3}, {1.3, 1.3}},
+    max_health = 350,
+    order = "z",
+    render_layer = "decorative",
+    pictures =
+    {
+      {
+        filename = "__base__/graphics/entity/assembling-machine-3/assembling-machine-3.png",
+        width = 142,
+        height = 113,
+      }
+    },
+  },
+
+
+
   {
     type = "simple-entity",
     name = "air-vent",
@@ -232,7 +258,6 @@ data:extend(
     dying_explosion = "massive-explosion",
     crafting_categories = {"digging"},
     ingredient_count = 0,
-    fixed_recipe = "drilling",
     collision_box = {{-2.2, -2.2}, {2.2, 2.2}},
     selection_box = {{-2.5, -2.5}, {2.5, 2.5}},
     animation =
@@ -644,6 +669,13 @@ data:extend(
           green = {-1, -0.25},
         }
       }
+    },
+    circuit_connector_sprites =
+    {
+      get_circuit_connector_sprites({-0.1875, -0.375}, nil, 7),
+      get_circuit_connector_sprites({0.375, -0.53125}, nil, 1),
+      get_circuit_connector_sprites({-0.1875, -0.375}, nil, 7),
+      get_circuit_connector_sprites({0.375, -0.53125}, nil, 1),
     },
     circuit_wire_max_distance = 7.5,        
     working_sound =

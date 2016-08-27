@@ -1,4 +1,4 @@
-events_manager = {names = {}, registered_listeners = {}, registered_functions = {}, active = false }
+events_manager = {names = {}, registered_listeners = {}, registered_functions = {}, active = false}
 
 function events_manager:new(o)
 	if global._events_manager then
@@ -9,11 +9,24 @@ function events_manager:new(o)
 	global._events_manager.meta_data.previous_traceback = debug.traceback(nil, 2)
 
 	global._events_manager.managers = global._events_manager.managers or {}
+
 	o = o or {} -- create object if user does not provide one
+	o = events_manager:complete_data(o)
 	self.__index = self
 	setmetatable(o, self)
 	table.insert(global._events_manager.managers, o)
 	o:reload_events()
+	return o
+end
+
+
+
+function events_manager:complete_data(o)
+	for key,value in pairs(events_manager) do
+		if not type(value) == "function" then
+			if (o[key] == nil) then o[key] = value end
+		end
+	end
 	return o
 end
 

@@ -7,3 +7,9 @@ max_pollution_move_passive = 1 -- the max amount of pollution that can be moved 
 max_apnea_time = 20*60
 apnea_threshold = 1000
 apnea_damage = 2.5
+
+configuration = {}
+
+
+configuration.drilling = {}
+configuration.drilling.Recepies_amount_per_levels = 1

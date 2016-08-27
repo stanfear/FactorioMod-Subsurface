@@ -1,83 +1,56 @@
 require "util"
-require "defines"
 require "lib"
 require "config"
 
 -- require classes
 require "events_manager"
 require "custom_surface"
+require "simple_item_elevator"
+require "surface_driller"
 
-function setup()
+
+function init()
+	global.events_manager = events_manager:new()
+	surface_driller:init()
+	custom_surface:init()
+
+	global.events_manager:add_function(defines.events.on_player_created, "starting_items", starting_items)
+end
+
+function load()
 	-- init classes
 	events_manager:setup()
 	custom_surface:setup()
-
-
+	simple_item_elevator:setup()
+	surface_driller:setup()
 
 	global.events_manager = global.events_manager or events_manager:new()
-	global.data = ontick:new()
-	global.data:start()
+end
+
+script.on_init(init)
+script.on_load(load)
+script.on_configuration_changed(load)
 
 
-	ontick:init()
 
-	global.onTickFunctions = global.onTickFunctions or {}
-	global.elevator_association = global.elevator_association or {}
-	global.item_elevator = global.item_elevator or {}
-	global.surface_drillers = global.surface_drillers or {}
-	global.air_vents = global.air_vents or {}
-	global.underground_players = global.underground_players or {}
-	global.surface_associations = global.surface_associations or {}
-	global.Underground_driving_players = global.Underground_driving_players or {}
-	global.fluids_elevator = global.fluids_elevator or {}
-	global.waiting_entities = global.waiting_entities or {}
-	global.time_spent_dict = global.time_spent_dict or {}
-	global.selection_area_markers_per_player = global.selection_area_markers_per_player or {}
-	global.marked_for_digging = global.marked_for_digging or {}
-	global.digging_pending = global.digging_pending or {}
-	global.digging_in_progress = global.digging_in_progress or {}
-	global.digging_robots_deployment_centers = global.digging_robots_deployment_centers or {}
+function starting_items(_event)
+	local player = game.players[_event.player_index]
+	
+    player.insert{name="iron-plate", count=100}
+    player.insert{name="copper-plate", count=100}
+    player.insert{name="solar-panel", count=50}
+    player.insert{name="substation", count=50}
+    player.insert{name="accumulator", count=50}
+    player.insert{name="digging-planner", count=1}
 
-	-- move to where I create the first entrance ?
-	global.onTickFunctions["teleportation_check"] = teleportation_check
-	global.onTickFunctions["move_items"] = move_items
-	global.onTickFunctions["fluids_elevator_management"] = fluids_elevator_management -- needed to reset the method and prevent the crash
-
-
-	--global.onTickFunctions["debug"] = debug
+    player.force.research_all_technologies()
 end
 
 
 
 
-ontick = {data = "data"}
-function ontick:new(o)
-	o = o or {}   -- create object if user does not provide one
-	self.__index = self
-	setmetatable(o, self)
-	return o
-end
 
-function ontick:init()
-	self.__index = self
-	setmetatable(global.data, self)
-end
-
-function ontick:on_tick(_event)
-	game.player.print(self.data)
-	self.data = "on_tick - #" .. game.tick
-end
-
-function ontick:start()
-	global.events_manager:add_listener(defines.events.on_tick, self)
-end
-
-
-
-script.on_init(setup)
-script.on_load(setup)
-script.on_configuration_changed(setup)
-
+--[[
 -- when an entity is built (to create the tunnel exit)
 script.on_event({defines.events.on_built_entity, defines.events.on_robot_built_entity}, function(event) on_built_entity(event) end)
 
@@ -111,6 +84,7 @@ script.on_event(defines.events.on_tick,
 		end
 	end)
 
+]]
 
 
 --[[function debug(function_name)
@@ -390,22 +364,8 @@ function add_association_data(_entity, _complementary_entity)
 				output1.position.x, 
 				output1.position.y)] = {input = input_complementary,   output = output1}
 	end
-
-	
 end
 
-function is_area_gen(_area, _surface)
-	if is_subsurface(_surface) then
-		_area = expand_area(_area, 1)
-	end
-	chunk_area = {left_top = to_chunk_position(_area.left_top), right_bottom = to_chunk_position(_area.right_bottom)}
-	for x,y in iarea(chunk_area) do
-		if not _surface.is_chunk_generated({x=x, y=y}) then
-			return false
-		end
-	end
-	return true
-end
 
 function get_complementary_surface(_entity)
 	local complementary_surface
@@ -509,7 +469,6 @@ function fluids_elevator_management(function_name)
 		global.onTickFunctions[function_name] = nil
 	end
 end
-
 
 function on_player_driving_changed_state(event)
 	local player = game.players[event.player_index]
@@ -655,30 +614,6 @@ function pollution_killing_subsurface(function_name)
 	end
 end
 
-
-
-function move_items(function_name)
-	for key,elevator in pairs(global.item_elevator) do
-		if not(elevator.input.valid and elevator.output.valid) then
-			if elevator.input.valid then elevator.input.destroy() end
-			if elevator.output.valid then elevator.output.destroy() end
-		elseif elevator.input.active or elevator.output.active then
-			for laneI=1,2 do
-				lane_input = elevator.input.get_transport_line(laneI)
-				lane_output = elevator.output.get_transport_line(laneI)
-				if lane_input.get_item_count() > 0 and lane_output.can_insert_at_back() then
-					local item_to_move = {name = "", count = 1}
-					for name, count in pairs(lane_input.get_contents()) do
-						item_to_move.name = name
-						break
-					end
-					lane_input.remove_item(item_to_move)
-					lane_output.insert_at_back(item_to_move)
-				end
-			end
-		end
-	end
-end
 
 function teleportation_check(function_name)
 	--proximity test done only every 10 ticks (the player has to wait 120 ticks to transport, 10 more should'nt kill him)
@@ -883,48 +818,6 @@ function can_place_surface_elevator(_surface, _position)
 	return true
 end
 
-function get_subsurface(_surface)
-	if global.surface_associations[_surface.name] then -- if the subsurface already exist
-		return game.get_surface(global.surface_associations[_surface.name])
-	else -- we need to create the subsurface (pattern : subsurface_<surface_name>_<subsurface_number> - for sub_subsurface, the number is incressed)
-		local subsurface_name = ""
-		if is_subsurface(_surface) then
-			local regex = "^subsurface_(.+)_(%d+)$"
-			local subsurface_number
-			_, _,surface_name, subsurface_number = string.find(_surface.name, regex)
-			subsurface_name = "subsurface_" .. surface_name .. "_" .. (subsurface_number+1)
-		else
-			subsurface_name = "subsurface_" .. _surface.name .. "_1"
-		end
-		if not game.surfaces[subsurface_name] then
-			game.create_surface(subsurface_name)
-		end
-		local subsurface = game.get_surface(subsurface_name)
-		global.surface_associations[_surface.name] = subsurface.name
-		return subsurface
-	end
-end
-
-function get_oversurface(_subsurface)
-	if not is_subsurface(_subsurface) then return nil end
-	for surface_name,subsurface_name in pairs(global.surface_associations) do
-		if subsurface_name == _subsurface.name then
-			return game.get_surface(surface_name)
-		end
-	end
-end
-
-function is_subsurface(_surface)
-	local i, _ = string.find(_surface.name, "subsurface")
-	if i == 1 then -- who knows it could be another surface which happens to have the same pattern
-		for surface_name,subsurface_name in pairs(global.surface_associations) do
-			if subsurface_name == _surface.name then
-				return true
-			end
-		end
-	end
-	return false
-end
 
 function place_surface_elevator(_surface, _subsurface, _position, _force)
 	if not can_place_surface_elevator(_subsurface, _position) then return end
@@ -1044,24 +937,6 @@ function remove_surface_player_elevator(_entity, _player) -- _player is the play
 end
 		    	
 
--- if the chunk generated is a chunk of the tunnels, change all tiles to out_of-map tiles (-> not accessible and not on the map)
-function on_chunk_generated(event)
-
-	local surface = event.surface
-	local area = event.area
-	if is_subsurface(surface) then
-		local newTiles = {}
-		for x, y in iarea(area) do
-			table.insert(newTiles, {name = "out-of-map", position = {x, y}})
-		end
-		surface.set_tiles(newTiles)
-	end
-end
-
--- when a wall has been removed
-function on_subsurface_wall_mined(wall_entity, surface)
-	clear_subsurface(surface, wall_entity.position, 1, nil)
-end
 
 -- when a building has been removed (to check when a wall is removed)
 function on_pre_mined_item(event)
@@ -1122,6 +997,43 @@ function on_player_rotated_entity(event)
 		end
 	end
 end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 -- when a building is built
 function on_built_entity(event)
@@ -1245,103 +1157,17 @@ function on_built_entity(event)
 	end
 end
 
-function request_area_gen(_area, _surface) -- request is only done once per chunck since the game generate the map by chunks
-	if is_subsurface(_surface) then
-		_area = expand_area(_area, 1)
-	end
-	chunk_area = {left_top = to_chunk_position(_area.left_top), right_bottom = to_chunk_position(_area.right_bottom)}
-	for x,y in iarea(chunk_area) do
-		_surface.request_to_generate_chunks({x=x*32 + 16,y=y*32 + 16}, 1)
-	end
-end
-
-function clear_subsurface(_surface, _position, _digging_radius, _clearing_radius)
-	if _digging_radius < 1 then return nil end -- min _digging_radius is 1 
-	local digging_subsurface_area = get_area(_position, _digging_radius - 1)
-	local new_tiles = {}
-
-	if _clearing_radius then
-		local clearing_subsurface_area = get_area(_position, _clearing_radius)
-		for _,entity in ipairs(_surface.find_entities(clearing_subsurface_area)) do
-			if entity.type ~="player" then
-				entity.destroy()
-			else
-				entity.teleport(get_safe_position(_position, {x=_position.x + _clearing_radius, y = _position.y}))
-			end
-		end 
-	end
-
-	if not is_subsurface(_surface) then return end
-
-	local walls_destroyed = 0
-	for x, y in iarea(digging_subsurface_area) do
-		if _surface.get_tile(x, y).name ~= cavern_Ground_name then
-			table.insert(new_tiles, {name = cavern_Ground_name, position = {x, y}})
-		end
-
-		if global.marked_for_digging[string.format("%s&@{%d,%d}", _surface.name, math.floor(x), math.floor(y))] then -- remove the mark
-			if global.marked_for_digging[string.format("%s&@{%d,%d}", _surface.name, math.floor(x), math.floor(y))].valid then
-				global.marked_for_digging[string.format("%s&@{%d,%d}", _surface.name, math.floor(x), math.floor(y))].destroy()
-			end
-			global.marked_for_digging[string.format("%s&@{%d,%d}", _surface.name, math.floor(x), math.floor(y))] = nil
-		end
-		if global.digging_pending[_surface.name] and global.digging_pending[_surface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))] then -- remove the digging pending entity
-			if global.digging_pending[_surface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))].valid then
-				global.digging_pending[_surface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))].destroy()
-			end
-			global.digging_pending[_surface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))] = nil
-		end
-
-		local wall = _surface.find_entity(cavern_Wall_name, {x = x, y = y})
-		if wall then 
-			wall.destroy()
-			walls_destroyed = walls_destroyed + 1
-		else
-		end
-	end
-	local to_add = {}
-	for x, y in iouter_area_border(digging_subsurface_area) do
-		if _surface.get_tile(x, y).name == "out-of-map" then
-			table.insert(new_tiles, {name = "cave-walls", position = {x, y}})
-			_surface.create_entity{name = cavern_Wall_name, position = {x, y}, force=game.forces.neutral}
-			if global.marked_for_digging[string.format("%s&@{%d,%d}", _surface.name, math.floor(x), math.floor(y))] then -- manage the marked for digging cells
-				if global.digging_pending[_surface.name] == nil then global.digging_pending[_surface.name] = {} end
-				if global.digging_pending[_surface.name][string.format("{%d,%d}", math.floor(x), math.floor(y))] == nil then 
-					table.insert(to_add, {surface = _surface,x = x, y = y})
-				end
-				if global.marked_for_digging[string.format("%s&@{%d,%d}", _surface.name, math.floor(x), math.floor(y))].valid then	
-					global.marked_for_digging[string.format("%s&@{%d,%d}", _surface.name, math.floor(x), math.floor(y))].destroy()
-				end
-				global.marked_for_digging[string.format("%s&@{%d,%d}", _surface.name, math.floor(x), math.floor(y))] = nil
-			end
-		end
-	end
-	_surface.set_tiles(new_tiles)
-
-	-- done after because set_tiles remove decorations
-	for _,data in ipairs(to_add) do
-		local pending_entity = data.surface.create_entity{name = "pending-digging", position = {x = data.x, y = data.y}, force=game.forces.neutral}
-		global.digging_pending[data.surface.name][string.format("{%d,%d}", math.floor(data.x), math.floor(data.y))] = pending_entity
-	end
-
-	return walls_destroyed
-end
 
 
 
 
 
-function startingItems(player)
-	--[[
-  player.insert{name="iron-plate", count=100}
-  player.insert{name="solar-panel", count=50}
-  player.insert{name="substation", count=50}
-  player.insert{name="basic-accumulator", count=50}
-  player.insert{name="digging-planner", count=1}
 
-  player.force.research_all_technologies()
-  ]]
-end
+
+
+
+
+
 
 
 -- A* inspired algorithme to find the closest digging pending position
