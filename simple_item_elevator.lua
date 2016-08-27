@@ -1,10 +1,16 @@
 simple_item_elevator = {input_belt = nil, output_belt = nil, active = nil, valid = true}
 
-function simple_item_elevator:new(o)
+function surface_driller:init()
 	global._simple_item_elevator = global._simple_item_elevator or {}
 	global._simple_item_elevator.simple_item_elevators = global._simple_item_elevator.simple_item_elevators or {}
 	global._simple_item_elevator.meta_data = global._simple_item_elevator.meta_data or {}
 
+	global._simple_item_elevator.static = global._simple_item_elevator.static or {}
+	self.__index = self
+	setmetatable(global._simple_item_elevator.static, self)
+end
+
+function simple_item_elevator:new(o)
 	if not (o.input_belt.valid and o.output_belt.valid) then
 		error("Eather the input belt or the output belt from the item_elevator is invalid",2)
 	end

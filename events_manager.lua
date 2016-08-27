@@ -1,14 +1,20 @@
 events_manager = {names = {}, registered_listeners = {}, registered_functions = {}, active = false}
 
+function events_manager:init()
+	global._events_manager = global._events_manager or {}
+	global._events_manager.managers = global._events_manager.managers or {}
+	global._events_manager.meta_data = global._events_manager.meta_data or {}
+
+	global._events_manager.static = global._events_manager.static or {}
+	self.__index = self
+	setmetatable(global._events_manager.static, self)
+end
+
 function events_manager:new(o)
 	if global._events_manager then
 		warning("An event manager has already been generated. Generating a new one will render the previous useless (unless you use reload_events() again - Only one manager can be used at a time).\nPrevious event_manager generated in:\n" .. global._events_manager.meta_data.previous_traceback .. "\n\nNew event_manager generated in:\n" .. debug.traceback(nil, 2))
 	end
-	global._events_manager = global._events_manager or {}
-	global._events_manager.meta_data = global._events_manager.meta_data or {}
 	global._events_manager.meta_data.previous_traceback = debug.traceback(nil, 2)
-
-	global._events_manager.managers = global._events_manager.managers or {}
 
 	o = o or {} -- create object if user does not provide one
 	o = events_manager:complete_data(o)

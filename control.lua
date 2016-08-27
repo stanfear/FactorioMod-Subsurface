@@ -11,8 +11,10 @@ require "surface_driller"
 
 function init()
 	global.events_manager = events_manager:new()
-	surface_driller:init()
+	events_manager:init()
 	custom_surface:init()
+	simple_item_elevator:init()
+	surface_driller:init()
 
 	global.events_manager:add_function(defines.events.on_player_created, "starting_items", starting_items)
 end
