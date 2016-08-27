@@ -20,6 +20,3 @@ require("prototypes.tile.tiles")
 
 -- categories
 require("prototypes.category.categories")
-
--- map settings
-require("prototypes.map-settings")
