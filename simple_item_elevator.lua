@@ -1,6 +1,6 @@
 simple_item_elevator = {input_belt = nil, output_belt = nil, active = nil, valid = true}
 
-function surface_driller:init()
+function simple_item_elevator:init()
 	global._simple_item_elevator = global._simple_item_elevator or {}
 	global._simple_item_elevator.simple_item_elevators = global._simple_item_elevator.simple_item_elevators or {}
 	global._simple_item_elevator.meta_data = global._simple_item_elevator.meta_data or {}
