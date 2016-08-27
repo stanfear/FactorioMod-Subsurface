@@ -3,7 +3,7 @@ data:extend(
   {
     type = "technology",
     name = "tunnel-entrance",
-    icon = "__base__/graphics/icons/basic-mining-drill.png",
+    icon = "__base__/graphics/icons/electric-mining-drill.png",
     effects =
     {
       {

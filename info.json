@@ -3,6 +3,7 @@
   "version": "0.0.4",
   "title": "Subsurface - build beneath your base !",
   "author": "StanFear",
-  "dependencies": ["base >= 0.12.21"],
+  "dependencies": ["base >= 0.13.0"],
+  "factorio_version": "0.13",
   "description": "Adds the ability to dig the underground !!"
 }
