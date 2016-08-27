@@ -8,34 +8,7 @@ require "custom_surface"
 require "simple_item_elevator"
 require "surface_driller"
 
-
-function init()
-	global.events_manager = events_manager:new()
-
-	custom_surface:init()
-	simple_item_elevator:init()
-	surface_driller:init()
-
-	global.events_manager:add_function(defines.events.on_player_created, "starting_items", starting_items)
-end
-
-function load()
-	-- init classes
-	events_manager:setup()
-	custom_surface:setup()
-	simple_item_elevator:setup()
-	surface_driller:setup()
-
-	global.events_manager = global.events_manager or events_manager:new()
-end
-
-script.on_init(init)
-script.on_load(load)
-script.on_configuration_changed(load)
-
-
-
-function starting_items(_event)
+local function starting_items(_event)
 	local player = game.players[_event.player_index]
 	
     player.insert{name="iron-plate", count=100}
@@ -47,6 +20,29 @@ function starting_items(_event)
 
     player.force.research_all_technologies()
 end
+
+
+local function init()
+	global.events_manager = events_manager:new()
+	custom_surface:init()
+	simple_item_elevator:init()
+	surface_driller:init()
+
+	global.events_manager:add_function(defines.events.on_player_created, "starting_items", starting_items)
+end
+
+local function load()
+	events_manager:setup()
+	global.events_manager = global.events_manager or events_manager:new()
+	-- init classes
+	custom_surface:setup()
+	simple_item_elevator:setup()
+	surface_driller:setup()
+end
+
+script.on_init(init)
+script.on_load(load)
+script.on_configuration_changed(load)
 
 
 
