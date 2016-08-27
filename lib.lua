@@ -8,6 +8,8 @@
 ]]
 --iarea this was taken from the NESTT mod lib.lua and modified
 function iarea( area )
+	if not area then error("area = nil",2) end
+	
 	local leftTop = area.left_top 
 	local RightBottom = area.right_bottom
 	local _x = leftTop.x
@@ -30,8 +32,8 @@ function iarea( area )
 end
 
 function iouter_area_border(area)
-	local left_top = {x = area.left_top.x - 1, y = area.left_top.y - 1}
-	local right_bottom = {x = area.right_bottom.x + 1, y = area.right_bottom.y + 1}
+	local left_top = {x = math.floor(area.left_top.x) - 0.5, y = math.floor(area.left_top.y) - 0.5}
+	local right_bottom = {x = math.floor(area.right_bottom.x) + 1.5, y = math.floor(area.right_bottom.y) + 1.5}
 	local _x = left_top.x
 	local _y = left_top.y
 	local reachedEnd = false
