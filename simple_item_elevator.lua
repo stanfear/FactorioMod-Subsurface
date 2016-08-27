@@ -20,7 +20,7 @@ function simple_item_elevator:new(o)
 
 	self.__index = self
 	setmetatable(o, self)
-	global._simple_item_elevator.simple_item_elevators[string.format("%s@{%d,%d}-%s@{%d,%d}", input_belt.surface.name, input_belt.position.x, input_belt.position.y, output_belt.surface.name, output_belt.position.x, output_belt.position.y)] = o
+	global._simple_item_elevator.simple_item_elevators[string.format("%s@{%d,%d}-%s@{%d,%d}", o.input_belt.surface.name, o.input_belt.position.x, o.input_belt.position.y, o.output_belt.surface.name, o.output_belt.position.x, o.output_belt.position.y)] = o
 	
 	global.events_manager:add_listener(defines.events.on_tick, o)
 
@@ -48,13 +48,13 @@ function simple_item_elevator:setup()
 end
 
 
-function simple_item_elevator:on_tick(event)
-	if not (input_belt.valid and output_belt.valid) then
+function simple_item_elevator:on_tick(_)
+	if not (self.input_belt.valid and self.output_belt.valid) then
 		self.valid = false
-	elseif elevator.input.active or elevator.output.active then
+	elseif self.input_belt.active or self.output_belt.active then
 		for laneI=1,2 do
-			lane_input = input_belt.get_transport_line(laneI)
-			lane_output = output_belt.get_transport_line(laneI)
+			local lane_input = self.input_belt.get_transport_line(laneI)
+			local lane_output = self.output_belt.get_transport_line(laneI)
 			if lane_input.get_item_count() > 0 then
 				local item_to_move = {name = next(lane_input.get_contents(), nil), count = 1}
 				if lane_output.insert_at_back(item_to_move) then lane_input.remove_item(item_to_move) end
@@ -65,5 +65,5 @@ end
 
 function simple_item_elevator:destroy()
 	global.events_manager:remove_listener(defines.events.on_tick, self)
-	global._simple_item_elevator.simple_item_elevators[string.format("%s@{%d,%d}-%s@{%d,%d}", input_belt.surface.name, input_belt.position.x, input_belt.position.y, output_belt.surface.name, output_belt.position.x, output_belt.position.y)] = nil
+	global._simple_item_elevator.simple_item_elevators[string.format("%s@{%d,%d}-%s@{%d,%d}", self.input_belt.surface.name, self.input_belt.position.x, self.input_belt.position.y, self.output_belt.surface.name, self.output_belt.position.x, self.output_belt.position.y)] = nil
 end
